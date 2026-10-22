@@ -7,7 +7,7 @@ import { advertiseRefs, type GitService, receivePack, uploadPack } from "../../g
 import type { GitObject, ObjectType, Oid, RefUpdate, RefUpdateResult, Repo, StoredObject } from "../../git-core/repo.ts";
 import { fetchFromRemote, pushToRemote } from "../../git-core/sync.ts";
 import { readAll, streamOf } from "./body.ts";
-import { authHeadersFor, freshMirrorStatus, MAX_SYNC_PACK_BYTES, MIRROR_RETRY_DELAYS_MS, type MirrorState, type MirrorStatus } from "./mirror.logic.ts";
+import { authHeadersFor, freshMirrorStatus, MAX_SYNC_OBJECT_BYTES, MAX_SYNC_PACK_BYTES, MIRROR_RETRY_DELAYS_MS, type MirrorState, type MirrorStatus } from "./mirror.logic.ts";
 
 // Objects larger than this are stored in R2 under objects/<oid> instead of inline in SQLite.
 // A SQLite row in a Durable Object may be at most 2 MB, so the threshold has to sit below that.
@@ -203,7 +203,7 @@ export class RepoObject extends DurableObject<Env> implements Repo {
 	async importFrom(url: string): Promise<ImportOutcome> {
 		if ((await this.listRefs()).size > 0) return { ok: false, status: 409, error: "repo is not empty; import only fills an empty repo" };
 		try {
-			const result = await fetchFromRemote(this, url, { headers: authHeadersFor(url, mirrorToken(this.env)), maxPackBytes: MAX_SYNC_PACK_BYTES });
+			const result = await fetchFromRemote(this, url, { headers: authHeadersFor(url, mirrorToken(this.env)), maxPackBytes: MAX_SYNC_PACK_BYTES, maxObjectBytes: MAX_SYNC_OBJECT_BYTES });
 			const head = result.head && result.refs.has(result.head) ? result.head : defaultHeadFor(result.refs);
 			if (head) await this.setHead(head);
 			return { ok: true, refs: Object.fromEntries(result.refs), objects: result.objects, head: head ?? (await this.headTarget()) };
@@ -242,8 +242,10 @@ export class RepoObject extends DurableObject<Env> implements Repo {
 		status.next_attempt_at = null;
 		const changesBefore = this.mirrorChanges;
 		let failure: string | null = null;
+		// Too big (413) stays too big until the repo shrinks: retrying only burns the next six attempts.
+		let tooBig = false;
 		try {
-			const result = await pushToRemote(this, url, { headers: authHeadersFor(url, mirrorToken(this.env)), maxPackBytes: MAX_SYNC_PACK_BYTES });
+			const result = await pushToRemote(this, url, { headers: authHeadersFor(url, mirrorToken(this.env)), maxPackBytes: MAX_SYNC_PACK_BYTES, maxObjectBytes: MAX_SYNC_OBJECT_BYTES });
 			const refused = result.results.filter((r) => !r.ok);
 			if (refused.length > 0) {
 				throw new Error(`remote refused ${refused.map((r) => `${r.ref} (${r.ok ? "" : r.reason})`).join(", ")}`);
@@ -251,6 +253,7 @@ export class RepoObject extends DurableObject<Env> implements Repo {
 			if (result.commands.length > 0) status.last_pushed_refs = Object.fromEntries(result.commands.map((c) => [c.ref, c.new]));
 		} catch (error) {
 			failure = errorMessage(error);
+			tooBig = (error as RemoteError).status === 413;
 		}
 		if (failure === null) {
 			status.state = "ok";
@@ -277,7 +280,7 @@ export class RepoObject extends DurableObject<Env> implements Repo {
 			return;
 		}
 		const delay = MIRROR_RETRY_DELAYS_MS[status.attempts - 1];
-		if (delay === undefined) {
+		if (delay === undefined || tooBig) {
 			status.state = "failed";
 			this.writeMirrorStatus(status);
 			console.error(JSON.stringify({ message: "mirror push gave up", url, error: failure }));

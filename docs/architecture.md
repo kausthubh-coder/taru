@@ -74,8 +74,13 @@ plain `fetch`), so GitHub is just another Git server to us.
 - A single push can be at most 100 MB (the Workers request limit). Bigger repos get imported from GitHub by the
   server, not pushed.
 - Request bodies are buffered in memory. That's fine for normal pushes. Streaming comes when a real repo needs it.
-- Import and the copy buffer one pack each, capped at 100 MB, inside a Durable Object with 128 MB of memory. A
-  repository whose history doesn't fit in one such pack can't be imported or copied yet.
+- Import and the copy hold all the objects they move in memory, inside a Durable Object with 128 MB. The pack is
+  not the limit: GitHub's 11 MB pack of expressjs/express unpacks to 165 MB of objects, and the pack we push has no
+  deltas and is copied a few times while it's built. So both stop at 48 MiB of objects (`MAX_SYNC_OBJECT_BYTES`)
+  with a 413, and the copy marks itself failed instead of retrying. Measured in Node: mirroring express needed a
+  52 MB request and peaked at 660 MB. Bigger repos need streaming packs with deltas, which aren't built yet.
+- `git push` (receive-pack) has no such cap yet: a 100 MB push can unpack to far more than 128 MB. Locally it works
+  (workerd doesn't enforce the limit); in production it would fail. Same fix: streaming.
 - The server speaks Git protocol v0/v1. Modern clients ask for v2 and fall back cleanly.
 - **Auth is temporary.** Creating a repo and pushing need HTTP Basic auth with the password `TARU_ADMIN_TOKEN`.
   Public clone is open. Accounts (Better Auth with GitHub sign-in) replace this in a later step.

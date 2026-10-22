@@ -9,7 +9,7 @@ import { type ClientOptions, fetchAdvertisement, fetchObjects, pushPack, remoteE
 import { writePack } from "./packWriter.ts";
 import { hasMissingReferences, loadObjects } from "./protocol.ts";
 import { selectObjects } from "./reachability.ts";
-import type { Oid, RefUpdate, RefUpdateResult, Repo } from "./repo.ts";
+import type { GitObject, Oid, RefUpdate, RefUpdateResult, Repo } from "./repo.ts";
 
 /** Objects per putObjects call: bounds R2 writes in flight and the size of one SQLite transaction. */
 const PUT_CHUNK = 500;
@@ -21,6 +21,11 @@ export interface SyncOptions {
 	headers?: Record<string, string>;
 	/** Largest pack accepted or sent, in bytes. */
 	maxPackBytes: number;
+	/**
+	 * Largest total size of the objects held in memory at once: the objects a fetched pack unpacks to, or the
+	 * objects a pushed pack is built from. This, not the pack size, is what has to fit in a Durable Object.
+	 */
+	maxObjectBytes: number;
 }
 
 export function isSyncedRef(name: string): boolean {
@@ -38,7 +43,7 @@ export interface FetchResult {
 }
 
 export async function fetchFromRemote(repo: Repo, url: string, options: SyncOptions): Promise<FetchResult> {
-	const client: ClientOptions = { headers: options.headers, maxResponseBytes: options.maxPackBytes };
+	const client: ClientOptions = { headers: options.headers, maxResponseBytes: options.maxPackBytes, maxObjectBytes: options.maxObjectBytes };
 	const advertisement = await fetchAdvertisement(url, "git-upload-pack", client);
 	const refs = new Map([...advertisement.refs].filter(([name]) => isSyncedRef(name)));
 	const local = await repo.listRefs();
@@ -77,7 +82,7 @@ export interface PushResult {
 }
 
 export async function pushToRemote(repo: Repo, url: string, options: SyncOptions): Promise<PushResult> {
-	const client: ClientOptions = { headers: options.headers, maxResponseBytes: options.maxPackBytes };
+	const client: ClientOptions = { headers: options.headers, maxResponseBytes: options.maxPackBytes, maxObjectBytes: options.maxObjectBytes };
 	const advertisement = await fetchAdvertisement(url, "git-receive-pack", client);
 	const local = new Map([...(await repo.listRefs())].filter(([name]) => isSyncedRef(name)));
 	const remote = new Map([...advertisement.refs].filter(([name]) => isSyncedRef(name)));
@@ -100,13 +105,23 @@ export async function pushToRemote(repo: Repo, url: string, options: SyncOptions
 		const haves = [...(await repo.hasObjects(remoteOids))];
 		const oids = await selectObjects(repo, wants, haves, false);
 		objects = oids.length;
-		pack = await writePack(loadObjects(repo, oids), oids.length);
+		pack = await writePack(limitObjectBytes(loadObjects(repo, oids), options.maxObjectBytes), oids.length);
 		if (pack.length > options.maxPackBytes) throw remoteError(`pack is ${pack.length} bytes, over the ${options.maxPackBytes} byte limit`, 413);
 	}
 
 	const report = await pushPack(url, commands, pack, advertisement.capabilities, client);
 	if (report.unpack !== "ok") throw remoteError(`remote could not unpack: ${report.unpack}`);
 	return { commands, results: report.results, objects };
+}
+
+/** Passes objects through, failing with 413 once their total size passes `maxBytes`, before more are loaded. */
+async function* limitObjectBytes(objects: AsyncIterable<GitObject>, maxBytes: number): AsyncGenerator<GitObject> {
+	let total = 0;
+	for await (const object of objects) {
+		total += object.data.length;
+		if (total > maxBytes) throw remoteError(`the objects to push are over the ${maxBytes} byte limit`, 413);
+		yield object;
+	}
 }
 
 function failIfRejected(results: RefUpdateResult[], what: string): void {

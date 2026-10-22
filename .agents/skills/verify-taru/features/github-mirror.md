@@ -26,4 +26,4 @@ Preconditions: baseline; git on PATH. No GitHub token is needed: the copy goes t
 
 - A real push to real GitHub needs `GITHUB_MIRROR_TOKEN` in `.dev.vars` (never commit it) and a mirror URL on `github.com`. `verify.mjs mirror` does not do this.
 - A ref GitHub refuses (a protected branch, or a race) makes the whole attempt count as failed and retried, even though the other refs landed; `last_error` names the ref and reason.
-- The first push after importing a big repo rebuilds the whole pack in the Durable Object's memory; the same 100 MB pack limit applies.
+- Each push builds its whole pack in the Durable Object's memory, without deltas, so it stops at 48 MiB of objects. Over that, the status goes straight to `failed` with "over the ... byte limit" and no retries. A big repo pushed to Taru with git (which has no such cap yet) can't be copied.

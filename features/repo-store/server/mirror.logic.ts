@@ -4,6 +4,13 @@
 /** Largest pack we fetch or push in one go. Packs are buffered in the Durable Object, which has 128 MB. */
 export const MAX_SYNC_PACK_BYTES = 100 * 1024 * 1024;
 
+/**
+ * Largest total size of the objects an import or a mirror push holds at once. Both are buffered whole, and the
+ * pushed pack has no deltas and is copied a few times while it's built, so this sits well under the 128 MB a
+ * Durable Object has. Bigger repos need streaming packs, which aren't built yet.
+ */
+export const MAX_SYNC_OBJECT_BYTES = 48 * 1024 * 1024;
+
 /** Delay before each retry, by failures in a row. After the last one the copy waits for the next ref change. */
 export const MIRROR_RETRY_DELAYS_MS = [5_000, 30_000, 2 * 60_000, 10 * 60_000, 30 * 60_000, 60 * 60_000];
 

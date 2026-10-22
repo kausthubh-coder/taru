@@ -38,6 +38,8 @@ export interface ClientOptions {
 	headers?: Record<string, string>;
 	/** Largest response body accepted, in bytes. Over it, the request fails with a clear error. */
 	maxResponseBytes: number;
+	/** Largest total size of the objects a fetched pack unpacks to (see readPack). */
+	maxObjectBytes: number;
 }
 
 /** GET <url>/info/refs?service=<service>, parsed. */
@@ -129,7 +131,7 @@ export async function fetchObjects(url: string, wants: Oid[], haves: Oid[], repo
 	}
 	const pack = concatBytes(packChunks);
 	if (pack.length === 0) throw new Error("upload-pack sent no pack");
-	return readPack(pack, repo);
+	return readPack(pack, repo, options.maxObjectBytes);
 }
 
 export interface PushResult {

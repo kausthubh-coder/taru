@@ -16,7 +16,7 @@ import { fetchFromRemote, pushToRemote } from "./sync.ts";
 
 const TOKEN = "s3cret-pat";
 const auth = { Authorization: `Basic ${btoa(`x-access-token:${TOKEN}`)}` };
-const options = { headers: auth, maxPackBytes: 50 * 1024 * 1024 };
+const options = { headers: auth, maxPackBytes: 50 * 1024 * 1024, maxObjectBytes: 50 * 1024 * 1024 };
 
 const repo = new MemoryRepo();
 let fakeGithub: ChildProcess;
@@ -220,7 +220,7 @@ describe("fetchFromRemote (import)", () => {
 	});
 
 	test("b. without the token the fake GitHub answers 401, like GitHub", async () => {
-		const error = await fetchAdvertisement(originUrl, "git-upload-pack", { maxResponseBytes: 1024 }).catch((e: RemoteError) => e);
+		const error = await fetchAdvertisement(originUrl, "git-upload-pack", { maxResponseBytes: 1024, maxObjectBytes: 1024 }).catch((e: RemoteError) => e);
 		expect(error).toBeInstanceOf(Error);
 		expect((error as RemoteError).status).toBe(401);
 	});
@@ -254,9 +254,26 @@ describe("fetchFromRemote (import)", () => {
 		expect(fresh.objects.size).toBe(0);
 		expect(fresh.refs.size).toBe(0);
 	});
+
+	test("d2. objects that unpack past the memory limit are refused with 413 and store nothing", async () => {
+		// The pack itself is small (deltas); what a Durable Object has to hold is the expanded objects.
+		const fresh = new MemoryRepo();
+		const error = (await fetchFromRemote(fresh, originUrl, { ...options, maxObjectBytes: 1000 }).catch((e: RemoteError) => e)) as RemoteError;
+		expect(error.message).toMatch(/over the 1000 byte limit/);
+		expect(error.status).toBe(413);
+		expect(fresh.objects.size).toBe(0);
+		expect(fresh.refs.size).toBe(0);
+	});
 });
 
 describe("pushToRemote (mirror)", () => {
+	test("e0. a push whose objects are over the memory limit is refused with 413 before anything is sent", async () => {
+		const error = (await pushToRemote(repo, mirrorUrl, { ...options, maxObjectBytes: 1000 }).catch((e: RemoteError) => e)) as RemoteError;
+		expect(error.message).toMatch(/over the 1000 byte limit/);
+		expect(error.status).toBe(413);
+		expect(await git(mirrorDir, "for-each-ref")).toBe("");
+	});
+
 	test("e. the first push copies every branch and tag into an empty remote", async () => {
 		const result = await pushToRemote(repo, mirrorUrl, options);
 		expect(result.commands.map((command) => command.ref).toSorted()).toEqual(["refs/heads/feature", "refs/heads/main", "refs/tags/light", "refs/tags/v1.0"]);
