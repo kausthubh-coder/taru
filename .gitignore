@@ -33,3 +33,6 @@ dist-ssr
 # agent worktrees
 .claude/worktrees
 /.claude/skills
+
+# verify skill: instance state, throwaway backends, evidence
+.verify/

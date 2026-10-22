@@ -7,7 +7,14 @@ export default defineConfig(({ mode }) => {
 	const port = Number(process.env.PORT || loadEnv(mode, process.cwd(), "").PORT) || 5173;
 	return {
 		// The Worker debugger port defaults to 9231 for every checkout, so a second dev server fails to start.
-		plugins: [react(), cloudflare({ inspectorPort: port + 10000 })],
+		// TARU_STATE_DIR lets the verify skill run against a throwaway local backend instead of .wrangler/state.
+		plugins: [
+			react(),
+			cloudflare({
+				inspectorPort: port + 10000,
+				persistState: process.env.TARU_STATE_DIR ? { path: process.env.TARU_STATE_DIR } : true,
+			}),
+		],
 		server: { port, strictPort: true },
 	};
 });
