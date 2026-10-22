@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Drives a real, isolated Taru instance and saves evidence. Run from the repo root:
 //   node .agents/skills/verify-taru/verify.mjs <command> [args]
-// Commands: launch | doctor | stop | shot <name> [--phone] [--dark] | waitlist <email> | repos | git-roundtrip
+// Commands: launch | doctor | stop | shot <name> [--phone] [--dark] [--path brand/] | waitlist <email> | repos | git-roundtrip
 //           import <git-url> | mirror | agent-api | mcp
 // Instance state: .verify/instance.json. Throwaway backend: .verify/state. Evidence: .verify/evidence/<run>/ (kept).
 import { execFileSync, execSync, spawn } from "node:child_process";
@@ -153,16 +153,23 @@ async function browser(fn) {
 }
 
 async function shot(name, flags) {
-	if (!name) fail("usage: shot <name> [--phone] [--dark]");
+	if (!name) fail("usage: shot <name> [--phone] [--dark] [--path brand/]");
 	const inst = instance();
 	const out = evidenceDir();
 	const phone = flags.includes("--phone");
+	const pathFlag = flags.indexOf("--path");
+	// Resolved against the instance URL, so brand/ and /brand/ both work. The docs use brand/ because Git Bash
+	// rewrites an argument like /brand/ into a Windows path (C:/Program Files/Git/brand/) before node sees it.
+	const path = flags.find((flag) => flag.startsWith("--path="))?.slice("--path=".length) ?? (pathFlag === -1 ? "/" : flags[pathFlag + 1]);
+	if (!path || path.includes(":")) fail("--path takes a page path like brand/ (Git Bash turns /brand/ into a Windows path)");
 	await browser(async (b) => {
 		const page = await b.newPage({
 			viewport: phone ? { width: 390, height: 844 } : { width: 1440, height: 900 },
 			colorScheme: flags.includes("--dark") ? "dark" : "light",
+			// The landing hero plays once on load; reduced motion shows its end state, so the shot never lands mid-way.
+			reducedMotion: "reduce",
 		});
-		await page.goto(inst.url, { waitUntil: "networkidle" });
+		await page.goto(new URL(path, inst.url).href, { waitUntil: "networkidle" });
 		const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 		await page.screenshot({ path: join(out, `${name}.png`), fullPage: true });
 		writeFileSync(join(out, `${name}.aria.txt`), await page.locator("body").ariaSnapshot());
@@ -741,5 +748,5 @@ switch (command) {
 		await mcp();
 		break;
 	default:
-		fail("commands: launch | doctor | stop | shot <name> [--phone] [--dark] | waitlist <email> | repos | git-roundtrip | import <git-url> | mirror | agent-api | mcp");
+		fail("commands: launch | doctor | stop | shot <name> [--phone] [--dark] [--path brand/] | waitlist <email> | repos | git-roundtrip | import <git-url> | mirror | agent-api | mcp");
 }

@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Taru">
+  <!-- Taru mark. For light backgrounds. A lowercase t whose crossbar grows into a branch; the lime node is the newest commit. -->
+  <g fill="none" stroke="#151711" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.5V21a6 6 0 0 0 6 6h5"/><path d="M5 12h6c6 0 9-2 10.5-6"/></g><circle cx="23.5" cy="6" r="4.25" fill="#c4f252" stroke="#151711" stroke-width="1.5"/>
+</svg>

@@ -15,7 +15,7 @@ node .agents/skills/verify-taru/verify.mjs <command>
 |---|---|
 | `launch` | Runs setup, creates a fresh throwaway backend in `.verify/state` (D1 migrations applied), starts Vite + the Worker on dev port + 1000, waits until the landing page and API answer. Prints `ready: <url> (pid …)` |
 | `doctor` | Read-only: our PID is alive, the URL serves Taru's landing page and the JSON API, the throwaway backend exists, the admin token is readable. Run it first when anything looks off |
-| `shot <name> [--phone] [--dark]` | Full-page screenshot + ARIA snapshot of `/` (1440×900 or 390×844); warns on horizontal overflow |
+| `shot <name> [--phone] [--dark] [--path brand/]` | Full-page screenshot + ARIA snapshot of `/`, or of `--path` (1440×900 or 390×844); warns on horizontal overflow. Write the path without its leading slash: Git Bash rewrites `/brand/` into a Windows path |
 | `waitlist <email>` | Fills the hero form in Chromium, submits, reads the status line, and checks D1 has exactly one row for that email |
 | `repos` | Prints `GET /api/repos` |
 | `git-roundtrip` | Creates a repo through the API, pushes a real-shaped repo with the real `git` client (nested dirs, empty file, binary, >1 MB file), clones it, compares HEAD and every file's bytes, runs `git fsck`, pushes an incremental change and pulls it |

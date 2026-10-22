@@ -16,5 +16,10 @@ export default defineConfig(({ mode }) => {
 			}),
 		],
 		server: { port, strictPort: true },
+		// Two static pages: the landing page at / and the brand kit at /brand/. Set on the client environment only;
+		// a top-level build input would also become an entry of the Worker build.
+		environments: {
+			client: { build: { rolldownOptions: { input: { main: "index.html", brand: "brand/index.html" } } } },
+		},
 	};
 });
