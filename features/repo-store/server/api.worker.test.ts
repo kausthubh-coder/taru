@@ -33,7 +33,7 @@ describe("POST /api/repos", () => {
 		const created = await create({ owner: "kaust", name: "taru" });
 		expect(created.status).toBe(201);
 		const body = await created.json<{ owner: string; name: string; clone_url: string; created_at: string }>();
-		expect(body).toMatchObject({ owner: "kaust", name: "taru", clone_url: `${env.TARU_PUBLIC_URL}/kaust/taru.git` });
+		expect(body).toMatchObject({ owner: "kaust", name: "taru", clone_url: "http://taru.test/kaust/taru.git" });
 		expect(body.created_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
 		expect(await env.REPO.getByName("kaust/taru").headTarget()).toBe("refs/heads/main");
@@ -85,6 +85,7 @@ describe("GET /api/repos", () => {
 			name: "two",
 			head: "refs/heads/main",
 			refs: { "refs/heads/main": "a".repeat(40) },
+			clone_url: "http://taru.test/lister/two.git",
 		});
 
 		const empty = await call("/api/repos/lister/one");

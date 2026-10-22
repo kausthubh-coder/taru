@@ -22,5 +22,5 @@ Preconditions: baseline; `TOKEN` is `TARU_ADMIN_TOKEN` from `.dev.vars`.
 
 ## Gotchas
 
-- `clone_url` is built from the `TARU_PUBLIC_URL` var (`http://localhost:5173` in `wrangler.jsonc`), not from the request, so on a verify instance it shows the wrong port. Use `<url>/<owner>/<name>.git`.
+- `clone_url` is built from the request's origin, so it's whatever host and port you called. Behind a proxy that rewrites the Host, it shows the inner host.
 - Owner and name are case-insensitive (`Acme/API` is `acme/api`).

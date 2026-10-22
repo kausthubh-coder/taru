@@ -29,10 +29,7 @@
 	"d1_databases": [
 		// Accounts, repo index, waitlist. Migrations in migrations/.
 		{ "binding": "DB", "database_name": "taru", "migrations_dir": "migrations" }
-	],
-	"vars": {
-		"TARU_PUBLIC_URL": "http://localhost:5173"
-	}
+	]
 	// Secrets (set with `wrangler secret put`, locally in .dev.vars):
 	//   TARU_ADMIN_TOKEN  password for git push and repo creation until accounts land
 }
