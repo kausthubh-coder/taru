@@ -19,6 +19,7 @@ The maintained source for verifying Taru's user-facing behavior. Read this, then
 | Feature | File | Entry points |
 |---|---|---|
 | Landing page | `landing.md` | Browser `/` |
+| Brand kit | `brand.md` | Browser `/brand/`, landing footer link |
 | Waitlist | `waitlist.md` | Hero form, bottom form, no-JS form post, `POST /api/waitlist` |
 | Repos API | `repos-api.md` | `POST /api/repos`, `GET /api/repos`, `GET /api/repos/:owner/:name` |
 | Git push and clone | `git-push-clone.md` | Real `git` client over smart HTTP |

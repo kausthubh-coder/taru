@@ -1,0 +1,738 @@
+/* Brand kit page (/brand/). A reference page: each section shows the thing, then the rules for using it. Tokens and
+   shared pieces come from shared/ui; colors in the tables and the light and dark panels are filled in by brand.ts
+   from theme.css itself. */
+
+@import "../../../shared/ui/theme.css";
+@import "../../../shared/ui/components.css";
+
+.brand-hero {
+	padding-block: clamp(40px, 6vw, 96px) clamp(56px, 6vw, 96px);
+}
+
+.brand-hero h1 {
+	font-size: var(--text-display);
+	line-height: var(--leading-display);
+	letter-spacing: var(--tracking-display);
+}
+
+.brand-hero .lede {
+	margin-top: var(--space-6);
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	margin-top: var(--space-8);
+}
+
+.split-brand {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-8) var(--space-16);
+	align-items: start;
+}
+
+@media (width >= 960px) {
+	.split-brand {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	}
+}
+
+/* Rules: short lines, each one thing to do or not do. */
+
+.rules {
+	display: grid;
+	gap: var(--space-3);
+	margin-top: var(--space-8);
+	padding: 0;
+	list-style: none;
+	max-width: var(--measure);
+}
+
+.rules li {
+	position: relative;
+	padding-left: var(--space-6);
+	color: var(--text-muted);
+}
+
+.rules li::before {
+	content: "";
+	position: absolute;
+	left: 2px;
+	top: 0.62em;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--text);
+}
+
+.rules b {
+	font-weight: 600;
+	color: var(--text);
+}
+
+.rules-tight {
+	margin-top: var(--space-6);
+}
+
+.fine {
+	margin-top: var(--space-4);
+	max-width: var(--measure);
+	font-size: var(--text-small);
+	color: var(--text-muted);
+}
+
+.table-title {
+	margin-top: var(--space-12);
+	font-size: var(--text-h3);
+	line-height: 1.25;
+}
+
+.table-title + .table-scroll {
+	margin-top: var(--space-4);
+}
+
+/* The name */
+
+.name-card {
+	display: grid;
+	gap: var(--space-2);
+	padding: var(--space-8);
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-card);
+}
+
+.name-word {
+	font-family: var(--font-display);
+	font-size: var(--text-h2);
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: var(--tracking-heading);
+}
+
+.name-script {
+	font-family: "Noto Sans Devanagari", "Nirmala UI", "Kohinoor Devanagari", "Devanagari Sangam MN", sans-serif;
+	font-size: var(--text-h3);
+	color: var(--text-muted);
+}
+
+.name-card figcaption {
+	margin-top: var(--space-2);
+	color: var(--text-muted);
+}
+
+/* The logo: each panel shows one file on the ground it's made for. */
+
+.logo-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-3);
+	margin-top: var(--space-12);
+}
+
+@media (width >= 720px) {
+	.logo-grid {
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+	}
+
+	.logo-grid .panel {
+		grid-column: span 2;
+	}
+
+	.logo-grid .panel-wide {
+		grid-column: span 3;
+	}
+}
+
+.panel {
+	position: relative;
+	display: grid;
+	place-items: center;
+	min-height: 200px;
+	margin: 0;
+	padding: var(--space-12) var(--space-8);
+	color: var(--text);
+	background: var(--page);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-card);
+}
+
+.panel-wide {
+	min-height: 240px;
+}
+
+.panel img {
+	width: auto;
+	max-width: 100%;
+	height: 72px;
+}
+
+.panel-wide img {
+	height: 64px;
+}
+
+.panel figcaption {
+	position: absolute;
+	left: var(--space-4);
+	bottom: var(--space-3);
+}
+
+.construction {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-8) var(--space-16);
+	align-items: center;
+	margin-top: var(--space-12);
+}
+
+@media (width >= 840px) {
+	.construction {
+		grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+	}
+}
+
+.grid-figure {
+	margin: 0;
+	padding: var(--space-6);
+	color: var(--text);
+	background: var(--page);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-card);
+}
+
+.grid-figure svg {
+	width: 100%;
+	height: auto;
+	overflow: visible;
+}
+
+.grid-lines {
+	fill: none;
+	stroke: var(--line);
+	stroke-width: 0.08;
+}
+
+.grid-guide {
+	fill: none;
+	stroke: var(--text-faint);
+	stroke-width: 0.1;
+	stroke-dasharray: 0.4 0.4;
+}
+
+.construction .rules {
+	margin-top: 0;
+}
+
+/* Tables: lines between rows and nothing else, like the landing page's. */
+
+.spec {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.spec thead th {
+	padding: 0 var(--space-6) var(--space-3) 0;
+	font-family: var(--font-mono);
+	font-size: var(--text-label);
+	font-weight: 500;
+	letter-spacing: var(--tracking-label);
+	text-align: left;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	border-bottom: 1px solid var(--line-input);
+}
+
+.spec tbody th,
+.spec td {
+	padding: var(--space-3) var(--space-6) var(--space-3) 0;
+	text-align: left;
+	vertical-align: middle;
+	border-bottom: 1px solid var(--line);
+}
+
+.spec tbody th {
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.spec td {
+	color: var(--text-muted);
+}
+
+.spec th code,
+.spec td code {
+	color: var(--text);
+}
+
+/* A row can name four files; let it wrap between them rather than squeeze its description. */
+.files tbody th {
+	white-space: normal;
+}
+
+/* Color roles: a swatch, its hex value and the contrast that matters, per scheme. The three tables share column
+   widths so their columns line up. */
+
+.roles {
+	table-layout: fixed;
+}
+
+.roles th:nth-child(1) {
+	width: 15rem;
+}
+
+.roles th:nth-child(3),
+.roles th:nth-child(4) {
+	width: 13.5rem;
+}
+
+.roles td[data-scheme] {
+	white-space: nowrap;
+}
+
+.swatch {
+	display: inline-block;
+	width: 28px;
+	height: 28px;
+	vertical-align: middle;
+	border-radius: var(--radius-chip);
+	/* The swatch sits on its own scheme's page color, so a light swatch is visible in a dark row and the reverse. */
+	box-shadow:
+		0 0 0 1px var(--line),
+		0 0 0 var(--space-1) var(--swatch-ground);
+	margin-inline: var(--space-1) calc(var(--space-2) + var(--space-1));
+}
+
+.ratio {
+	margin-left: var(--space-2);
+	font-family: var(--font-mono);
+	font-size: var(--text-label);
+	color: var(--text-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Type */
+
+.specimens {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-3);
+	margin-top: var(--space-12);
+}
+
+@media (width >= 840px) {
+	.specimens {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.specimen {
+	display: grid;
+	gap: var(--space-4);
+	margin: 0;
+	padding: var(--space-8);
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-card);
+}
+
+.specimen-glyphs {
+	font-family: var(--font-display);
+	font-size: clamp(4rem, 3rem + 4vw, 7rem);
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: var(--tracking-display);
+}
+
+.specimen-line {
+	font-family: var(--font-display);
+	font-size: var(--text-h3);
+	font-weight: 600;
+	letter-spacing: -0.01em;
+}
+
+.specimen-mono .specimen-glyphs,
+.specimen-mono .specimen-line {
+	font-family: var(--font-mono);
+	font-weight: 500;
+	letter-spacing: 0;
+}
+
+.specimen-mono .specimen-line {
+	font-size: var(--text-body);
+}
+
+.specimen figcaption {
+	color: var(--text-muted);
+}
+
+.specimen figcaption b {
+	font-weight: 600;
+	color: var(--text);
+}
+
+.type-scale tbody th {
+	padding-right: var(--space-8);
+}
+
+/* Sizes are numbers: tabular figures, lined up on the right. */
+.type-scale thead th:last-child,
+.type-scale td[data-size-range] {
+	padding-right: 0;
+	text-align: right;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+.sample {
+	display: block;
+	font-family: var(--font-display);
+	font-weight: 600;
+	color: var(--text);
+}
+
+.sample + code {
+	display: inline-block;
+	margin-top: var(--space-1);
+	font-size: var(--text-caption);
+}
+
+.sample-display {
+	font-size: var(--text-display);
+	line-height: var(--leading-display);
+	letter-spacing: var(--tracking-display);
+}
+
+.sample-h2 {
+	font-size: var(--text-h2);
+	line-height: var(--leading-heading);
+	letter-spacing: var(--tracking-heading);
+}
+
+.sample-h3 {
+	font-size: var(--text-h3);
+	line-height: 1.25;
+}
+
+.sample-lead {
+	font-size: var(--text-lead);
+	font-weight: 400;
+}
+
+.sample-body {
+	font-size: var(--text-body);
+	font-weight: 400;
+}
+
+.sample-small {
+	font-size: var(--text-small);
+	font-weight: 400;
+}
+
+.sample-caption {
+	font-size: var(--text-caption);
+	font-weight: 400;
+}
+
+.sample-label {
+	font-family: var(--font-mono);
+}
+
+.sample-code {
+	font-family: var(--font-mono);
+	font-size: var(--text-code);
+	font-weight: 400;
+}
+
+/* Space and shape */
+
+.space-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-12) var(--space-16);
+	margin-top: var(--space-12);
+}
+
+@media (width >= 960px) {
+	.space-grid {
+		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+	}
+}
+
+.space-scale,
+.radii {
+	display: grid;
+	align-content: start;
+	gap: var(--space-3);
+	padding: 0;
+	list-style: none;
+	font-size: var(--text-small);
+	color: var(--text-muted);
+}
+
+.space-scale li {
+	display: grid;
+	/* The label keeps its longest word; on a 320px phone the bar column gives way instead. */
+	grid-template-columns: minmax(0, 160px) minmax(min-content, 1fr);
+	align-items: center;
+	gap: var(--space-4);
+}
+
+.space-scale .bar {
+	height: 12px;
+	background: var(--line-input);
+	border-radius: 2px;
+}
+
+.space-scale code,
+.radii code {
+	margin-right: var(--space-2);
+	color: var(--text);
+}
+
+.radii {
+	gap: var(--space-4);
+}
+
+.radii li {
+	display: flex;
+	align-items: center;
+	gap: var(--space-4);
+}
+
+.radius-box {
+	flex: none;
+	width: 64px;
+	height: 64px;
+	background: var(--fill);
+	border: 1.5px solid var(--text);
+}
+
+.radius-icon {
+	border-radius: 22.4%;
+}
+
+/* In use: the shared components in each scheme. */
+
+.in-use {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-3);
+	margin-top: var(--space-12);
+}
+
+@media (width >= 960px) {
+	.in-use {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.kit-panel {
+	display: grid;
+	gap: var(--space-4);
+	align-content: start;
+	padding: var(--space-8);
+	color: var(--text);
+	background: var(--page);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-card);
+}
+
+.kit-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	align-items: center;
+}
+
+.kit-statuses {
+	gap: var(--space-6);
+}
+
+/* Signature */
+
+.signature-pane {
+	align-self: center;
+}
+
+/* Voice */
+
+.traits {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-6) var(--space-12);
+	margin-top: var(--space-8);
+}
+
+@media (width >= 840px) {
+	.traits {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+.traits dt {
+	font-family: var(--font-display);
+	font-size: var(--text-h3);
+	font-weight: 600;
+}
+
+.traits dd {
+	margin-top: var(--space-2);
+	color: var(--text-muted);
+}
+
+.voice-table td {
+	width: 50%;
+	vertical-align: top;
+}
+
+.voice-table td:first-child {
+	color: var(--text);
+}
+
+/* Don't: each card shows the misuse on a light panel, under a red rule that says "wrong". */
+
+.misuse {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-3);
+	margin-top: var(--space-8);
+	padding: 0;
+	list-style: none;
+}
+
+@media (width >= 640px) {
+	.misuse {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (width >= 960px) {
+	.misuse {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+.misuse li {
+	display: grid;
+	grid-template-rows: 120px auto;
+	place-items: center;
+	gap: var(--space-4);
+	padding: var(--space-6);
+	color: var(--text);
+	background: var(--page);
+	border: 1px solid var(--line);
+	border-top: 3px solid var(--danger);
+	border-radius: var(--radius-card);
+	overflow: hidden;
+}
+
+.misuse li > p {
+	justify-self: start;
+	font-size: var(--text-small);
+	color: var(--text-muted);
+}
+
+.misuse svg {
+	width: 64px;
+	height: 64px;
+}
+
+.misuse img {
+	width: auto;
+	height: 44px;
+}
+
+.misuse-lime {
+	background: var(--accent) !important;
+}
+
+.misuse-lime > p {
+	color: var(--on-accent) !important;
+}
+
+.misuse-stretch {
+	transform: scale(1.6, 0.8);
+}
+
+.misuse-glow {
+	filter: drop-shadow(0 0 10px var(--accent)) drop-shadow(0 8px 14px rgb(0 0 0 / 0.35));
+}
+
+.misuse-font {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 40px;
+	font-style: italic;
+}
+
+.misuse-font img {
+	height: 34px;
+}
+
+/* Below 960px the spec tables become lists: the color tables' fixed columns leave the Job column no room on a
+   tablet, and nothing should scroll sideways on a phone. */
+
+@media (width < 960px) {
+	.spec thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+	}
+
+	.spec,
+	.spec tbody,
+	.spec tr {
+		display: block;
+	}
+
+	.spec tr {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: var(--space-2) var(--space-4);
+		padding-block: var(--space-4);
+		border-bottom: 1px solid var(--line);
+	}
+
+	.spec tbody th,
+	.spec td {
+		grid-column: 1 / -1;
+		padding: 0;
+		border: 0;
+		white-space: normal;
+	}
+
+	.roles td[data-scheme] {
+		grid-column: auto;
+		white-space: normal;
+	}
+
+	/* The size goes on the sample's line, at the right. */
+	.type-scale tr {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+
+	.type-scale tbody th {
+		grid-column: 1;
+	}
+
+	.type-scale td[data-size-range] {
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	.voice-table td {
+		width: auto;
+	}
+
+	.voice-table td:last-child::before {
+		content: "Not: ";
+		font-weight: 600;
+		color: var(--danger);
+	}
+}
