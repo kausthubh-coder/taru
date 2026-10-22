@@ -1,331 +1,47 @@
-/* Taru landing page.
+/* Taru landing page. Tokens and shared pieces come from shared/ui; this file is the page's layout.
 
-   Direction (the developer chose it): a sharp, technical page in the family of Linear and Vercel. Mostly
-   monochrome, one green accent kept for the next action, the logo's branch tip and the success line, Inter
-   for text and JetBrains Mono for code. Light and dark follow the system setting.
+   The direction (.critly/direction.md): the product is the picture. The first screen shows one commit in three
+   places (an agent's API call, plain git on a laptop, the GitHub copy), and the lime highlight on the commit id is
+   what ties them together. Everything else stays quiet so the headline, the form and that id lead. */
 
-   Tokens first (raw values become roles), then the page. Components only use the roles. */
+@import "../../../shared/ui/theme.css";
+@import "../../../shared/ui/components.css";
 
-/* Fonts: self-hosted, latin subset, one variable file each. The fallback is Arial sized to take up the same
-   space as Inter so text doesn't move when the font arrives. */
-@font-face {
-	font-family: "Inter";
-	src: url("/fonts/inter-latin-wght.woff2") format("woff2");
-	font-weight: 100 900;
-	font-display: swap;
-	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-	font-family: "Inter Fallback";
-	src: local("Arial"), local("Roboto");
-	size-adjust: 107.89%;
-	ascent-override: 89.79%;
-	descent-override: 22.36%;
-	line-gap-override: 0%;
-}
-
-@font-face {
-	font-family: "JetBrains Mono";
-	src: url("/fonts/jetbrains-mono-latin-wght.woff2") format("woff2");
-	font-weight: 100 800;
-	font-display: swap;
-	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-:root {
-	color-scheme: light dark;
-
-	--font-text: "Inter", "Inter Fallback", system-ui, sans-serif;
-	--font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
-
-	/* Light: a near-white page, ink text, hairlines. */
-	--page: oklch(0.985 0 0);
-	--surface: oklch(1 0 0);
-	--surface-sunken: oklch(0.96 0 0);
-	--text: oklch(0.2 0 0);
-	--text-muted: oklch(0.5 0 0);
-	--line: oklch(0.9 0 0);
-	--line-input: oklch(0.65 0 0);
-	--accent: oklch(0.52 0.16 150);
-	--accent-hover: oklch(0.46 0.15 150);
-	--accent-fg: #fff;
-	--danger: oklch(0.52 0.19 27);
-	--focus: var(--text);
-	--selection: oklch(0.9 0.06 150);
-
-	--radius-control: 6px;
-	--radius-card: 10px;
-
-	/* Type: a persuade surface, so body text is 17 to 18px and the display step is large. */
-	--text-caption: 0.8125rem;
-	--text-small: 0.9375rem;
-	--text-body: clamp(1.0625rem, 1rem + 0.3vw, 1.125rem);
-	--text-h3: 1.125rem;
-	--text-h2: clamp(1.625rem, 1.25rem + 1.6vw, 2.5rem);
-	--text-display: clamp(2.375rem, 1.5rem + 3.8vw, 4.5rem);
-	--text-mono: 0.875rem;
-
-	/* Space: a 4px scale, plus one fluid step for the gap between sections. */
-	--space-1: 4px;
-	--space-2: 8px;
-	--space-3: 12px;
-	--space-4: 16px;
-	--space-6: 24px;
-	--space-8: 32px;
-	--space-12: 48px;
-	--space-16: 64px;
-	--space-section: clamp(64px, 40px + 6vw, 128px);
-
-	--content: 1120px;
-	--gutter: clamp(20px, 4vw, 40px);
-	--measure: 58ch;
-}
-
-@media (prefers-color-scheme: dark) {
-	:root {
-		/* Dark is its own set: a lifted surface for the terminal, softer ink, a lighter and calmer green. */
-		--page: oklch(0.17 0 0);
-		--surface: oklch(0.205 0 0);
-		--surface-sunken: oklch(0.145 0 0);
-		--text: oklch(0.93 0 0);
-		--text-muted: oklch(0.68 0 0);
-		--line: oklch(0.28 0 0);
-		--line-input: oklch(0.5 0 0);
-		--accent: oklch(0.74 0.15 150);
-		--accent-hover: oklch(0.8 0.15 150);
-		--accent-fg: oklch(0.15 0 0);
-		--danger: oklch(0.74 0.16 27);
-		--selection: oklch(0.35 0.06 150);
-	}
-}
-
-/* Base */
-
-*,
-*::before,
-*::after {
-	box-sizing: border-box;
-}
-
-html {
-	background: var(--page);
-	color: var(--text);
-	font-family: var(--font-text);
-	font-size: 100%;
-	line-height: 1.5;
-	-webkit-text-size-adjust: 100%;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	scroll-padding-top: var(--space-6);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-	html {
-		scroll-behavior: smooth;
-	}
-}
-
-body {
-	margin: 0;
-	font-size: var(--text-body);
-	text-wrap: pretty;
-}
-
-h1,
-h2,
-h3,
-p,
-dl,
-dd,
-ol,
-figure,
-pre {
-	margin: 0;
-}
-
-h1,
-h2,
-h3 {
-	text-wrap: balance;
-	font-weight: 600;
-}
-
-a {
-	color: inherit;
-	text-decoration: underline;
-	text-decoration-color: var(--line-input);
-	text-underline-offset: 0.15em;
-	text-decoration-thickness: 1px;
-}
-
-@media (hover: hover) {
-	a:hover {
-		text-decoration-color: currentColor;
-	}
-}
-
-:focus-visible {
-	outline: 2px solid var(--focus);
-	outline-offset: 2px;
-}
-
-::selection {
-	background: var(--selection);
-}
-
-code {
-	font-family: var(--font-mono);
-	font-size: 0.875em;
-	padding: 0.1em 0.35em;
-	border-radius: 4px;
-	background: var(--surface-sunken);
-}
-
-pre code {
-	padding: 0;
-	border-radius: 0;
-	background: none;
-	font-size: inherit;
-}
-
-.sr-only {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	padding: 0;
-	margin: -1px;
-	overflow: hidden;
-	clip: rect(0, 0, 0, 0);
-	white-space: nowrap;
-	border: 0;
-}
-
-.wrap {
-	width: min(100% - 2 * var(--gutter), var(--content));
-	margin-inline: auto;
-}
-
-.muted {
-	color: var(--text-muted);
-}
-
-.small {
-	font-size: var(--text-small);
-}
-
-.label {
-	font-family: var(--font-mono);
-	font-size: var(--text-caption);
-	font-weight: 500;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--text-muted);
-}
-
-/* Header */
-
-.top {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-6);
-	min-height: 64px;
-	padding-block: var(--space-3);
-}
-
-.brand {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-2);
-	/* 27px of text plus padding makes a 44px target. */
-	padding-block: 9px;
-	font-weight: 600;
-	font-size: 1.125rem;
-	letter-spacing: -0.01em;
-	text-decoration: none;
-}
-
-.mark {
-	width: 24px;
-	height: 24px;
-	flex: none;
-}
-
-.mark .tip {
-	fill: var(--accent);
-}
-
-.nav {
-	display: flex;
-	gap: var(--space-6);
-	font-size: var(--text-small);
-}
-
-.nav a {
-	text-decoration: none;
-	color: var(--text-muted);
-	/* A 44px tall target without changing the row's look. */
-	padding-block: var(--space-3);
-}
-
-@media (hover: hover) {
-	.nav a:hover {
-		color: var(--text);
-	}
-}
-
-@media (width < 640px) {
-	.nav a:not(.nav-keep) {
-		display: none;
-	}
-}
-
-/* Hero: headline, the product, one next step. The terminal is the demo slot; the video replaces it. */
+/* Hero: headline, the pitch and the form side by side, then the product strip. */
 
 .hero {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr);
-	gap: var(--space-12);
-	/* Less space below than between sections, so the next heading shows at the fold and invites a scroll. */
-	padding-block: clamp(40px, 6vw, 88px) clamp(48px, 5vw, 80px);
-	align-items: center;
-}
-
-@media (width >= 960px) {
-	.hero {
-		grid-template-columns: minmax(0, 11fr) minmax(0, 10fr);
-		gap: var(--space-16);
-	}
+	padding-block: clamp(32px, 4vw, 64px) clamp(56px, 6vw, 96px);
 }
 
 .hero h1 {
 	font-size: var(--text-display);
-	line-height: 1.05;
-	letter-spacing: -0.025em;
-	max-width: 14ch;
+	line-height: var(--leading-display);
+	letter-spacing: var(--tracking-display);
+	max-width: 13ch;
 }
 
-.lede {
+.hero-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-6);
 	margin-top: var(--space-6);
+}
+
+/* Side by side only when the form's column fits the whole placeholder next to the button; below that the form sits
+   under the lede, as wide as a line of text. */
+.hero .waitlist {
 	max-width: var(--measure);
-	font-size: clamp(1.125rem, 1rem + 0.5vw, 1.3125rem);
-	line-height: 1.5;
-	color: var(--text-muted);
 }
 
-.lede code {
-	color: var(--text);
+@media (width >= 1120px) {
+	.hero-row {
+		grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+		gap: var(--space-16);
+		align-items: end;
+	}
 }
 
-/* Waitlist form: one solid button on the page, the input next to it. */
-
-.waitlist {
-	margin-top: var(--space-8);
-	max-width: 520px;
-}
+/* Waitlist form: the input and the one solid button on the screen. */
 
 .waitlist-row {
 	display: flex;
@@ -336,72 +52,22 @@ pre code {
 	.waitlist-row {
 		flex-direction: column;
 	}
-}
 
-.input {
-	flex: 1 1 auto;
-	min-width: 0;
-	height: 46px;
-	padding: 0 var(--space-4);
-	font: inherit;
-	font-size: max(16px, var(--text-body));
-	color: var(--text);
-	background: var(--surface);
-	border: 1px solid var(--line-input);
-	border-radius: var(--radius-control);
-}
-
-.input::placeholder {
-	color: var(--text-muted);
-	opacity: 1;
-}
-
-.input:user-invalid {
-	border-color: var(--danger);
-}
-
-.button {
-	flex: none;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	height: 46px;
-	padding: 0 var(--space-6);
-	font: inherit;
-	font-weight: 500;
-	color: var(--accent-fg);
-	background: var(--accent);
-	border: 0;
-	border-radius: var(--radius-control);
-	cursor: pointer;
-	white-space: nowrap;
-	transition: transform 100ms ease-out;
-}
-
-@media (hover: hover) {
-	.button:hover {
-		background: var(--accent-hover);
+	.waitlist-row .input {
+		flex: none;
 	}
-}
-
-.button:active {
-	transform: scale(0.98);
-}
-
-.button[aria-disabled="true"] {
-	cursor: progress;
 }
 
 /* The status line keeps its height so the layout holds when a message lands. */
 .form-status {
 	min-height: 1.5em;
-	margin-top: var(--space-2);
+	margin-top: var(--space-1);
 	font-size: var(--text-small);
 	color: var(--text-muted);
 }
 
 .form-status[data-state="ok"] {
-	color: var(--accent);
+	color: var(--success);
 	font-weight: 500;
 }
 
@@ -415,7 +81,7 @@ pre code {
 	margin-top: var(--space-2);
 	font-size: var(--text-small);
 	font-weight: 500;
-	color: var(--accent);
+	color: var(--success);
 }
 
 .form-note.is-error {
@@ -432,135 +98,166 @@ pre code {
 	color: var(--text-muted);
 }
 
-/* Demo slot: one framed box, so it reads as the product. */
+/* The strip: three panes that read as one row on a desktop and stack on a phone. */
 
-.demo {
-	border: 1px solid var(--line);
-	border-radius: var(--radius-card);
-	background: var(--surface);
-	overflow: hidden;
+.strip {
+	margin-top: clamp(var(--space-8), 4vw, var(--space-12));
 }
 
-.demo-bar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-4);
-	padding: var(--space-3) var(--space-4);
-	border-bottom: 1px solid var(--line);
+.strip-panes {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-3);
 }
 
-.demo-bar .dot {
-	display: inline-block;
-	width: 8px;
-	height: 8px;
-	margin-right: var(--space-2);
+@media (width >= 960px) {
+	.strip-panes {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0;
+	}
+
+	/* Joined into one window, so the three places read as one system. */
+	.strip-panes .pane {
+		border-radius: 0;
+	}
+
+	.strip-panes .pane + .pane {
+		border-left: 0;
+	}
+
+	.strip-panes .pane:first-child {
+		border-radius: var(--radius-card) 0 0 var(--radius-card);
+	}
+
+	.strip-panes .pane:last-child {
+		border-radius: 0 var(--radius-card) var(--radius-card) 0;
+	}
+}
+
+.step {
+	display: inline-grid;
+	place-items: center;
+	flex: none;
+	width: 20px;
+	height: 20px;
+	border: 1px solid var(--line-input);
 	border-radius: 50%;
-	background: var(--accent);
-	vertical-align: 1px;
-}
-
-.demo pre {
-	padding: var(--space-4) var(--space-4) var(--space-6);
 	font-family: var(--font-mono);
-	font-size: var(--text-mono);
-	/* Phones get a slightly smaller mono so most lines fit without a sideways scroll. */
-	font-size: clamp(0.78rem, 0.6rem + 0.8vw, var(--text-mono));
-	line-height: 1.65;
-	overflow-x: auto;
-	overscroll-behavior-x: contain;
-	tab-size: 4;
+	font-size: var(--text-label);
+	font-weight: 600;
+	color: var(--text);
 }
 
-.demo .c {
+.gh {
+	display: grid;
+	gap: var(--space-3);
+	padding: var(--space-4) var(--space-4) var(--space-6);
+}
+
+.gh-repo {
+	font-family: var(--font-mono);
+	font-size: var(--text-code);
 	color: var(--text-muted);
 }
 
-.demo .p {
-	color: var(--text-muted);
-	user-select: none;
+.gh-commits {
+	padding: 0;
+	list-style: none;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-control);
 }
 
-.demo-caption {
-	padding: 0 var(--space-4) var(--space-4);
+.gh-commits li {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 2px var(--space-3);
+	padding: var(--space-3);
+	font-size: var(--text-small);
+}
+
+.gh-commits li + li {
+	border-top: 1px solid var(--line);
+}
+
+.gh-title {
+	font-weight: 600;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gh-commits .sha,
+.gh-sha {
+	justify-self: end;
+	align-self: start;
+	font-size: var(--text-caption);
+}
+
+.gh-sha {
+	color: var(--text-muted);
+}
+
+.gh-meta,
+.gh-check {
 	font-size: var(--text-caption);
 	color: var(--text-muted);
 }
 
-/* Sections */
-
-.section {
-	padding-block: var(--space-section);
-	border-top: 1px solid var(--line);
+.gh-check {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	justify-self: end;
+	color: var(--success);
 }
 
-.section h2 {
-	font-size: var(--text-h2);
-	line-height: 1.15;
-	letter-spacing: -0.02em;
-	max-width: 24ch;
+.gh-check svg {
+	flex: none;
 }
 
-.section-intro {
-	margin-top: var(--space-4);
-	max-width: var(--measure);
+.gh-commits li + li .gh-title {
+	font-weight: 500;
 	color: var(--text-muted);
 }
 
-/* What it fixes: a definition list set like a table, lines between rows and nothing else. */
-
-.fixes {
-	margin-top: var(--space-8);
-	border-top: 1px solid var(--line);
-}
-
-.fixes > div {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr);
-	gap: var(--space-1) var(--space-8);
-	padding-block: var(--space-4);
-	border-bottom: 1px solid var(--line);
-}
-
-@media (width >= 640px) {
-	.fixes > div {
-		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-		padding-block: var(--space-4);
-	}
-}
-
-.fixes dt {
-	font-weight: 500;
-}
-
-.fixes dd {
+.strip-caption {
+	margin-top: var(--space-3);
+	font-size: var(--text-caption);
 	color: var(--text-muted);
 }
 
-.fixes dd b {
-	font-weight: 500;
-	color: var(--text);
-}
-
-/* How it works: four short answers, grouped by space. */
+/* How it works: three numbered steps across, the Scion credit under them. */
 
 .how {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
-	gap: var(--space-8) var(--space-12);
-	margin-top: var(--space-8);
+	gap: var(--space-8);
+	margin-top: var(--space-12);
+	padding: 0;
+	list-style: none;
 }
 
-@media (width >= 720px) {
+@media (width >= 840px) {
 	.how {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--space-12) var(--space-16);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--space-12);
 	}
+}
+
+.how li {
+	padding-top: var(--space-4);
+	border-top: 1px solid var(--line-input);
+}
+
+.how .status {
+	margin-bottom: var(--space-3);
 }
 
 .how h3 {
 	font-size: var(--text-h3);
-	line-height: 1.3;
+	line-height: 1.25;
+	letter-spacing: -0.01em;
 }
 
 .how p {
@@ -568,39 +265,322 @@ pre code {
 	color: var(--text-muted);
 }
 
-/* Self-host */
+.credit {
+	margin-top: var(--space-12);
+	max-width: var(--measure);
+	font-size: var(--text-small);
+	color: var(--text-muted);
+}
 
-.selfhost {
+/* Why agents: three checked numbers first, each with its source, then the table, then one quote. */
+
+.proof {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
-	gap: var(--space-8) var(--space-16);
-	align-items: start;
+	gap: var(--space-8);
+	margin-top: var(--space-12);
+	padding: 0;
+	list-style: none;
 }
 
 @media (width >= 840px) {
-	.selfhost {
+	.proof {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--space-12);
+	}
+}
+
+.proof li {
+	max-width: 34ch;
+}
+
+.proof-number {
+	font-family: var(--font-display);
+	font-size: var(--text-h2);
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: var(--tracking-heading);
+	font-variant-numeric: tabular-nums;
+}
+
+.proof-number + p {
+	margin-top: var(--space-3);
+	color: var(--text-muted);
+}
+
+.proof-source {
+	margin-top: var(--space-2);
+	font-size: var(--text-caption);
+	color: var(--text-faint);
+}
+
+#why .section-intro {
+	margin-top: var(--space-16);
+}
+
+.quote {
+	margin-top: var(--space-12);
+	max-width: 46rem;
+	padding-left: var(--space-6);
+	border-left: 2px solid var(--line);
+}
+
+.quote blockquote {
+	margin: 0;
+	font-size: var(--text-lead);
+	line-height: 1.45;
+}
+
+.quote figcaption {
+	margin-top: var(--space-3);
+	font-size: var(--text-small);
+	color: var(--text-muted);
+}
+
+.callout {
+	margin-top: var(--space-8);
+	max-width: var(--measure);
+	padding: var(--space-4) var(--space-6);
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-card);
+	color: var(--text-muted);
+}
+
+.callout b {
+	font-weight: 600;
+	color: var(--text);
+}
+
+/* Questions: a definition list, one answer per row. */
+
+.faq {
+	margin-top: var(--space-8);
+	max-width: 56rem;
+	border-top: 1px solid var(--line);
+}
+
+.faq > div {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-2) var(--space-8);
+	padding-block: var(--space-6);
+	border-bottom: 1px solid var(--line);
+}
+
+@media (width >= 840px) {
+	.faq > div {
+		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+	}
+}
+
+.faq dt {
+	font-weight: 600;
+}
+
+.faq dd {
+	color: var(--text-muted);
+}
+
+/* The table: lines between rows and nothing else. */
+
+
+.fixes {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--text-body);
+}
+
+.fixes thead th {
+	padding: 0 var(--space-6) var(--space-3) 0;
+	font-family: var(--font-mono);
+	font-size: var(--text-label);
+	font-weight: 500;
+	letter-spacing: var(--tracking-label);
+	text-align: left;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	border-bottom: 1px solid var(--line-input);
+}
+
+.fixes tbody th,
+.fixes td {
+	padding: var(--space-4) var(--space-6) var(--space-4) 0;
+	text-align: left;
+	vertical-align: top;
+	border-bottom: 1px solid var(--line);
+}
+
+.fixes tbody th {
+	width: 34%;
+	font-weight: 600;
+}
+
+.fixes td {
+	color: var(--text-muted);
+}
+
+.fixes td:last-child {
+	padding-right: 0;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.fixes td b {
+	font-weight: 600;
+	color: var(--text);
+}
+
+/* On a phone the table becomes a list: problem, answer, status, one row after another. */
+@media (width < 720px) {
+	.fixes thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+	}
+
+	.fixes,
+	.fixes tbody,
+	.fixes tr,
+	.fixes th,
+	.fixes td {
+		display: block;
+		width: auto;
+	}
+
+	.fixes tr {
+		padding-block: var(--space-4);
+		border-bottom: 1px solid var(--line);
+	}
+
+	.fixes tbody th,
+	.fixes td {
+		width: auto;
+		padding: 0;
+		border: 0;
+	}
+
+	.fixes td {
+		margin-top: var(--space-1);
+	}
+
+	.fixes td:last-child {
+		margin-top: var(--space-2);
+		text-align: left;
+	}
+}
+
+/* Git and GitHub: the facts beside a terminal. */
+
+.split {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-8) var(--space-16);
+	align-items: center;
+}
+
+@media (width >= 960px) {
+	.split {
 		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 	}
 }
 
-.selfhost p + p {
-	margin-top: var(--space-4);
+.facts {
+	display: grid;
+	gap: var(--space-4);
+	margin-top: var(--space-8);
+	padding: 0;
+	list-style: none;
 }
 
-.commands {
-	padding: var(--space-4) var(--space-6);
-	font-family: var(--font-mono);
-	font-size: var(--text-mono);
-	line-height: 1.8;
+.facts li {
+	position: relative;
+	padding-left: var(--space-6);
+	max-width: 52ch;
+}
+
+.facts li::before {
+	content: "";
+	position: absolute;
+	left: 2px;
+	top: 0.62em;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--text);
+}
+
+.limits {
+	margin-top: var(--space-6);
+	max-width: 52ch;
+	font-size: var(--text-small);
+	color: var(--text-muted);
+}
+
+/* Pricing: two plans, the real numbers first. */
+
+.plans {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-4);
+	margin-top: var(--space-12);
+	max-width: 960px;
+}
+
+@media (width >= 840px) {
+	.plans {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.plan {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--space-4);
+	padding: var(--space-8);
 	background: var(--surface);
 	border: 1px solid var(--line);
 	border-radius: var(--radius-card);
-	overflow-x: auto;
 }
 
-.commands .p {
+.plan h3 {
+	font-size: var(--text-h3);
+	line-height: 1.25;
+}
+
+.price {
 	color: var(--text-muted);
-	user-select: none;
+}
+
+.price .amount {
+	font-family: var(--font-display);
+	font-size: var(--text-h2);
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: var(--tracking-heading);
+	font-variant-numeric: tabular-nums;
+	color: var(--text);
+}
+
+.plan > p:not(.price) {
+	color: var(--text-muted);
+}
+
+.plan .button {
+	margin-top: auto;
+}
+
+.commands {
+	align-self: stretch;
+	padding: var(--space-3) var(--space-4);
+	font-size: var(--text-code);
+	line-height: 1.8;
+	background: var(--surface-sunken);
+	border-radius: var(--radius-control);
+	overflow-x: auto;
 }
 
 /* Where it is: the build order, one line each. */
@@ -610,7 +590,7 @@ pre code {
 	padding: 0;
 	list-style: none;
 	counter-reset: step;
-	max-width: 44rem;
+	max-width: 52rem;
 }
 
 .steps li {
@@ -618,22 +598,8 @@ pre code {
 	grid-template-columns: 2.5rem minmax(0, 1fr);
 	gap: var(--space-1) var(--space-4);
 	align-items: baseline;
-	padding-block: var(--space-3);
+	padding-block: var(--space-4);
 	border-top: 1px solid var(--line);
-}
-
-.steps .label {
-	grid-column: 2;
-}
-
-@media (width >= 640px) {
-	.steps li {
-		grid-template-columns: 2.5rem minmax(0, 1fr) auto;
-	}
-
-	.steps .label {
-		grid-column: 3;
-	}
 }
 
 .steps li:last-child {
@@ -644,12 +610,22 @@ pre code {
 	counter-increment: step;
 	content: counter(step, decimal-leading-zero);
 	font-family: var(--font-mono);
-	font-size: var(--text-caption);
+	font-size: var(--text-label);
 	color: var(--text-muted);
 }
 
-.steps .now {
-	color: var(--accent);
+.steps .status {
+	grid-column: 2;
+}
+
+@media (width >= 640px) {
+	.steps li {
+		grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+	}
+
+	.steps .status {
+		grid-column: 3;
+	}
 }
 
 /* Final call to action */
@@ -658,49 +634,16 @@ pre code {
 	text-align: center;
 }
 
-.join .waitlist {
+.join h2 {
 	margin-inline: auto;
+}
+
+.join .waitlist {
+	max-width: 520px;
+	margin: var(--space-8) auto 0;
 }
 
 .join .form-status,
 .join .reassure {
 	text-align: center;
-}
-
-/* Footer */
-
-.footer {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-4) var(--space-8);
-	padding-block: var(--space-8);
-	border-top: 1px solid var(--line);
-	font-size: var(--text-small);
-	color: var(--text-muted);
-}
-
-.footer-links {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--space-6);
-}
-
-.footer-links a {
-	text-decoration: none;
-	/* 22px of text plus padding makes a 44px target. */
-	padding-block: 11px;
-}
-
-@media (hover: hover) {
-	.footer-links a:hover {
-		color: var(--text);
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.button {
-		transition: none;
-	}
 }
