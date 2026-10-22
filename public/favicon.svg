@@ -1,14 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-  <!-- Same mark as logo.svg. The ink follows the system color scheme so it reads on light and dark tabs. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Taru mark for browser tabs. The ink follows the browser's color scheme; the lime node gets an ink ring on light
+       tabs, where lime alone is too faint. Same geometry as /brand/taru-mark.svg. -->
   <style>
-    .ink { stroke: #171717; fill: #171717; }
-    @media (prefers-color-scheme: dark) { .ink { stroke: #fafafa; fill: #fafafa; } }
+    .ink { stroke: #151711; }
+    .node { fill: #c4f252; stroke: #151711; }
+    @media (prefers-color-scheme: dark) {
+      .ink { stroke: #edefea; }
+      .node { stroke: none; }
+    }
   </style>
-  <g fill="none" stroke-width="2.4" stroke-linecap="round">
-    <path class="ink" d="M7 18V8"/>
-    <path class="ink" d="M7 13c0-4 10-2.5 10-7"/>
+  <g class="ink" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 3.5V21a6 6 0 0 0 6 6h5"/>
+    <path d="M5 12h6c6 0 9-2 10.5-6"/>
   </g>
-  <circle class="ink" cx="7" cy="19" r="2.5" stroke="none"/>
-  <circle class="ink" cx="7" cy="6" r="2.5" stroke="none"/>
-  <circle cx="17" cy="5" r="2.5" fill="#2da44e"/>
+  <circle class="node" cx="23.5" cy="6" r="4.25" stroke-width="1.5"/>
 </svg>
