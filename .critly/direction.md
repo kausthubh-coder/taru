@@ -12,7 +12,9 @@ References: Apple Continuity (the same document on four devices implies sync wit
 - Imagery: the product drawn in HTML: API requests, terminal output, a GitHub commit list, with realistic values. No illustrations or stock. The demo video replaces the hero strip when it exists.
 - Signature: a commit id in mono on the lime highlight, for the one commit the reader should follow. The logo's lime node is the same idea: the newest commit.
 - Voice: plain, specific, honest about status (planned features never in the present tense). Errors and money: plain and calm.
-- Density and pace: persuade pages comfortable (body 17 to 19px, display 44 to 92px), instant hovers, only the button press animates (100ms); app screens later compact (14 to 16px), quiet.
+- Density and pace: persuade pages comfortable (body 17 to 19px, display 44 to 92px), instant hovers; the button press animates (100ms), and the landing hero plays its commit trail once on load (the id lights up in each place in turn, about 1.4s, none with reduced motion); app screens later compact (14 to 16px), quiet.
+
+Page rhythm: each section below the hero has its own shape (big numbers, a quote, the status board, a terminal, the plan) and status is said once per place, on the hero notes and the board, not on every line. The first version repeated one heading-plus-grey-text shape seven times.
 
 ## Standard
 Layout, navigation, controls and states follow the platform and Critly's concepts.

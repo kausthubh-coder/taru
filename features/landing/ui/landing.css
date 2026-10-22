@@ -2,7 +2,8 @@
 
    The direction (.critly/direction.md): the product is the picture. The first screen shows one commit in three
    places (an agent's API call, plain git on a laptop, the GitHub copy), and the lime highlight on the commit id is
-   what ties them together. Everything else stays quiet so the headline, the form and that id lead. */
+   what ties them together. Below it, each section has a different shape (numbers, a quote, a board, a terminal, a
+   plan), so the eye can tell where a new idea starts. */
 
 @import "../../../shared/ui/theme.css";
 @import "../../../shared/ui/components.css";
@@ -10,7 +11,7 @@
 /* Hero: headline, the pitch and the form side by side, then the product strip. */
 
 .hero {
-	padding-block: clamp(32px, 4vw, 64px) clamp(56px, 6vw, 96px);
+	padding-block: clamp(32px, 4vw, 64px) var(--space-section);
 }
 
 .hero h1 {
@@ -56,6 +57,11 @@
 	.waitlist-row .input {
 		flex: none;
 	}
+
+	/* As wide as its label, not the screen: a full-width lime bar outweighs the headline on a phone. */
+	.waitlist-row .button {
+		align-self: flex-start;
+	}
 }
 
 /* The status line keeps its height so the layout holds when a message lands. */
@@ -98,54 +104,73 @@
 	color: var(--text-muted);
 }
 
-/* The strip: three panes that read as one row on a desktop and stack on a phone. */
+/* The strip: three places, each a pane with a note under it saying what happens there and whether it works yet. On a
+   desktop the panes join into one window, so the three places read as one system. */
 
 .strip {
 	margin-top: clamp(var(--space-8), 4vw, var(--space-12));
 }
 
-.strip-panes {
+.places {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
-	gap: var(--space-3);
+	gap: var(--space-8);
+}
+
+.place {
+	display: grid;
+	align-content: start;
+	gap: var(--space-4);
+}
+
+.place-note {
+	display: grid;
+	justify-items: start;
+	gap: var(--space-2);
+	padding-inline: var(--space-4);
+}
+
+.place-note p {
+	max-width: 40ch;
+	font-size: var(--text-small);
+	color: var(--text-muted);
 }
 
 @media (width >= 960px) {
-	.strip-panes {
+	.places {
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 0;
+		grid-template-rows: auto auto;
+		gap: var(--space-4) 0;
 	}
 
-	/* Joined into one window, so the three places read as one system. */
-	.strip-panes .pane {
+	/* Each place spans the strip's two rows, so the panes share one height and the notes start on one line. */
+	.place {
+		grid-row: span 2;
+		grid-template-rows: subgrid;
+	}
+
+	.place .pane {
 		border-radius: 0;
 	}
 
-	.strip-panes .pane + .pane {
+	.place + .place .pane {
 		border-left: 0;
 	}
 
-	.strip-panes .pane:first-child {
+	.place:first-child .pane {
 		border-radius: var(--radius-card) 0 0 var(--radius-card);
 	}
 
-	.strip-panes .pane:last-child {
+	.place:last-child .pane {
 		border-radius: 0 var(--radius-card) var(--radius-card) 0;
 	}
 }
 
-.step {
-	display: inline-grid;
-	place-items: center;
-	flex: none;
-	width: 20px;
-	height: 20px;
-	border: 1px solid var(--line-input);
-	border-radius: 50%;
-	font-family: var(--font-mono);
-	font-size: var(--text-label);
-	font-weight: 600;
-	color: var(--text);
+/* On a wide screen the hero's code is set at the size of a secondary line, so it reads as the picture, not fine print. */
+@media (width >= 1280px) {
+	.strip pre {
+		font-size: var(--text-small);
+	}
 }
 
 .gh {
@@ -221,63 +246,51 @@
 	color: var(--text-muted);
 }
 
-.strip-caption {
-	margin-top: var(--space-3);
-	font-size: var(--text-caption);
-	color: var(--text-muted);
-}
+/* The one animation on the page, played once on load: the commit id lights up in each place in turn, API first,
+   then the laptop, then GitHub, where the new row drops in. The order is the point, so it stays short. Reduced
+   motion shows the end state. */
+@media (prefers-reduced-motion: no-preference) {
+	.place .sha {
+		animation: sha-arrive 360ms var(--ease-out) both;
+	}
 
-/* How it works: three numbered steps across, the Scion credit under them. */
+	.place:nth-child(1) .sha {
+		animation-delay: 250ms;
+	}
 
-.how {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr);
-	gap: var(--space-8);
-	margin-top: var(--space-12);
-	padding: 0;
-	list-style: none;
-}
+	.place:nth-child(2) .sha {
+		animation-delay: 650ms;
+	}
 
-@media (width >= 840px) {
-	.how {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: var(--space-12);
+	.place:nth-child(3) .sha {
+		animation-delay: 1050ms;
+	}
+
+	.place:nth-child(3) .gh-commits li:first-child {
+		animation: row-arrive 360ms var(--ease-out) 950ms both;
 	}
 }
 
-.how li {
-	padding-top: var(--space-4);
-	border-top: 1px solid var(--line-input);
+@keyframes sha-arrive {
+	from {
+		background-color: transparent;
+		color: inherit;
+	}
 }
 
-.how .status {
-	margin-bottom: var(--space-3);
+@keyframes row-arrive {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
 }
 
-.how h3 {
-	font-size: var(--text-h3);
-	line-height: 1.25;
-	letter-spacing: -0.01em;
-}
-
-.how p {
-	margin-top: var(--space-2);
-	color: var(--text-muted);
-}
-
-.credit {
-	margin-top: var(--space-12);
-	max-width: var(--measure);
-	font-size: var(--text-small);
-	color: var(--text-muted);
-}
-
-/* Why agents: three checked numbers first, each with its source, then the table, then one quote. */
+/* Why agents: three checked numbers, big, each with its source, then one quote. */
 
 .proof {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
-	gap: var(--space-8);
+	gap: var(--space-12);
 	margin-top: var(--space-12);
 	padding: 0;
 	list-style: none;
@@ -286,7 +299,7 @@
 @media (width >= 840px) {
 	.proof {
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: var(--space-12);
+		gap: var(--space-8);
 	}
 }
 
@@ -296,15 +309,16 @@
 
 .proof-number {
 	font-family: var(--font-display);
-	font-size: var(--text-h2);
+	font-size: var(--text-display);
 	font-weight: 600;
 	line-height: 1;
-	letter-spacing: var(--tracking-heading);
+	letter-spacing: var(--tracking-display);
 	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
 }
 
 .proof-number + p {
-	margin-top: var(--space-3);
+	margin-top: var(--space-4);
 	color: var(--text-muted);
 }
 
@@ -314,162 +328,87 @@
 	color: var(--text-faint);
 }
 
-#why .section-intro {
-	margin-top: var(--space-16);
-}
-
 .quote {
-	margin-top: var(--space-12);
-	max-width: 46rem;
-	padding-left: var(--space-6);
-	border-left: 2px solid var(--line);
+	margin-top: clamp(var(--space-16), 8vw, var(--space-24));
+	max-width: 52rem;
 }
 
 .quote blockquote {
 	margin: 0;
-	font-size: var(--text-lead);
-	line-height: 1.45;
+	font-family: var(--font-display);
+	font-size: var(--text-h3);
+	font-weight: 500;
+	line-height: 1.4;
+	letter-spacing: -0.01em;
 }
 
 .quote figcaption {
-	margin-top: var(--space-3);
+	margin-top: var(--space-4);
 	font-size: var(--text-small);
 	color: var(--text-muted);
 }
 
-.callout {
-	margin-top: var(--space-8);
-	max-width: var(--measure);
-	padding: var(--space-4) var(--space-6);
-	background: var(--surface);
+/* What works: a board with one column per status. The column's edge says the same thing as the status dot: a solid
+   surface for what exists, a line for what's being built, a dashed line for what's planned. */
+
+.board {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-4);
+	margin-top: var(--space-12);
+}
+
+@media (width >= 960px) {
+	.board {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+.column {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-6);
+	padding: var(--space-6);
 	border: 1px solid var(--line);
 	border-radius: var(--radius-card);
+}
+
+.column[data-status="today"] {
+	background: var(--surface);
+	border-color: var(--line-input);
+}
+
+.column[data-status="planned"] {
+	border: 1px dashed var(--line-input);
+}
+
+.column h3 {
+	font-size: inherit;
+	line-height: 1;
+}
+
+.column ul {
+	display: grid;
+	gap: var(--space-4);
+	padding: 0;
+	list-style: none;
+	font-size: var(--text-small);
 	color: var(--text-muted);
 }
 
+.column b,
 .callout b {
 	font-weight: 600;
 	color: var(--text);
 }
 
-/* Questions: a definition list, one answer per row. */
-
-.faq {
-	margin-top: var(--space-8);
-	max-width: 56rem;
+/* The exposure warning sits with what works today, because it's about today. */
+.callout {
+	margin-top: auto;
+	padding-top: var(--space-4);
 	border-top: 1px solid var(--line);
-}
-
-.faq > div {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr);
-	gap: var(--space-2) var(--space-8);
-	padding-block: var(--space-6);
-	border-bottom: 1px solid var(--line);
-}
-
-@media (width >= 840px) {
-	.faq > div {
-		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-	}
-}
-
-.faq dt {
-	font-weight: 600;
-}
-
-.faq dd {
+	font-size: var(--text-small);
 	color: var(--text-muted);
-}
-
-/* The table: lines between rows and nothing else. */
-
-
-.fixes {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: var(--text-body);
-}
-
-.fixes thead th {
-	padding: 0 var(--space-6) var(--space-3) 0;
-	font-family: var(--font-mono);
-	font-size: var(--text-label);
-	font-weight: 500;
-	letter-spacing: var(--tracking-label);
-	text-align: left;
-	text-transform: uppercase;
-	color: var(--text-muted);
-	border-bottom: 1px solid var(--line-input);
-}
-
-.fixes tbody th,
-.fixes td {
-	padding: var(--space-4) var(--space-6) var(--space-4) 0;
-	text-align: left;
-	vertical-align: top;
-	border-bottom: 1px solid var(--line);
-}
-
-.fixes tbody th {
-	width: 34%;
-	font-weight: 600;
-}
-
-.fixes td {
-	color: var(--text-muted);
-}
-
-.fixes td:last-child {
-	padding-right: 0;
-	text-align: right;
-	white-space: nowrap;
-}
-
-.fixes td b {
-	font-weight: 600;
-	color: var(--text);
-}
-
-/* On a phone the table becomes a list: problem, answer, status, one row after another. */
-@media (width < 720px) {
-	.fixes thead {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-	}
-
-	.fixes,
-	.fixes tbody,
-	.fixes tr,
-	.fixes th,
-	.fixes td {
-		display: block;
-		width: auto;
-	}
-
-	.fixes tr {
-		padding-block: var(--space-4);
-		border-bottom: 1px solid var(--line);
-	}
-
-	.fixes tbody th,
-	.fixes td {
-		width: auto;
-		padding: 0;
-		border: 0;
-	}
-
-	.fixes td {
-		margin-top: var(--space-1);
-	}
-
-	.fixes td:last-child {
-		margin-top: var(--space-2);
-		text-align: left;
-	}
 }
 
 /* Git and GitHub: the facts beside a terminal. */
@@ -519,20 +458,37 @@
 	color: var(--text-muted);
 }
 
-/* Pricing: two plans, the real numbers first. */
+/* Pricing: the claim and the hosted plan on the left, the self-host numbers and commands on the right. */
 
-.plans {
+.pricing {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
-	gap: var(--space-4);
-	margin-top: var(--space-12);
-	max-width: 960px;
+	gap: var(--space-12) var(--space-16);
 }
 
-@media (width >= 840px) {
-	.plans {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (width >= 960px) {
+	.pricing {
+		grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+		align-items: start;
 	}
+}
+
+/* "self-host" breaks at its hyphen otherwise. */
+.keep {
+	white-space: nowrap;
+}
+
+.hosted {
+	margin-top: var(--space-8);
+	max-width: var(--measure);
+	padding-top: var(--space-6);
+	border-top: 1px solid var(--line);
+	color: var(--text-muted);
+}
+
+.hosted b {
+	font-weight: 600;
+	color: var(--text);
 }
 
 .plan {
@@ -544,11 +500,6 @@
 	background: var(--surface);
 	border: 1px solid var(--line);
 	border-radius: var(--radius-card);
-}
-
-.plan h3 {
-	font-size: var(--text-h3);
-	line-height: 1.25;
 }
 
 .price {
@@ -569,10 +520,6 @@
 	color: var(--text-muted);
 }
 
-.plan .button {
-	margin-top: auto;
-}
-
 .commands {
 	align-self: stretch;
 	padding: var(--space-3) var(--space-4);
@@ -583,55 +530,41 @@
 	overflow-x: auto;
 }
 
-/* Where it is: the build order, one line each. */
+/* Questions: a definition list, one answer per row. */
 
-.steps {
+.faq {
 	margin-top: var(--space-8);
-	padding: 0;
-	list-style: none;
-	counter-reset: step;
-	max-width: 52rem;
-}
-
-.steps li {
-	display: grid;
-	grid-template-columns: 2.5rem minmax(0, 1fr);
-	gap: var(--space-1) var(--space-4);
-	align-items: baseline;
-	padding-block: var(--space-4);
+	max-width: 56rem;
 	border-top: 1px solid var(--line);
 }
 
-.steps li:last-child {
+.faq > div {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-2) var(--space-8);
+	padding-block: var(--space-6);
 	border-bottom: 1px solid var(--line);
 }
 
-.steps li::before {
-	counter-increment: step;
-	content: counter(step, decimal-leading-zero);
-	font-family: var(--font-mono);
-	font-size: var(--text-label);
+@media (width >= 840px) {
+	.faq > div {
+		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+	}
+}
+
+.faq dt {
+	font-weight: 600;
+}
+
+.faq dd {
 	color: var(--text-muted);
 }
 
-.steps .status {
-	grid-column: 2;
-}
-
-@media (width >= 640px) {
-	.steps li {
-		grid-template-columns: 2.5rem minmax(0, 1fr) auto;
-	}
-
-	.steps .status {
-		grid-column: 3;
-	}
-}
-
-/* Final call to action */
+/* Final call to action: the page ends on a sunken band with the form, the same one as the hero. */
 
 .join {
 	text-align: center;
+	background: var(--surface-sunken);
 }
 
 .join h2 {

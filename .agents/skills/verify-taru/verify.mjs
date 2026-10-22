@@ -165,6 +165,8 @@ async function shot(name, flags) {
 		const page = await b.newPage({
 			viewport: phone ? { width: 390, height: 844 } : { width: 1440, height: 900 },
 			colorScheme: flags.includes("--dark") ? "dark" : "light",
+			// The landing hero plays once on load; reduced motion shows its end state, so the shot never lands mid-way.
+			reducedMotion: "reduce",
 		});
 		await page.goto(new URL(path, inst.url).href, { waitUntil: "networkidle" });
 		const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
