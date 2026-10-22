@@ -23,6 +23,12 @@ export function repoKey(repo: Pick<RepoRow, "owner" | "name">): string {
 	return `${repo.owner}/${repo.name}`;
 }
 
+/** Every repo, newest first. */
+export async function listRepos(db: D1Database): Promise<RepoRow[]> {
+	const { results } = await db.prepare("SELECT owner, name, created_at FROM repos ORDER BY created_at DESC, id DESC").all<RepoRow>();
+	return results;
+}
+
 export async function findRepo(db: D1Database, owner: string, name: string): Promise<RepoRow | null> {
 	return db
 		.prepare("SELECT owner, name, created_at FROM repos WHERE owner = ? AND name = ?")

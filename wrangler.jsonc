@@ -9,8 +9,8 @@
 	"compatibility_flags": ["nodejs_compat"],
 	"assets": {
 		"not_found_handling": "single-page-application",
-		// Git clients and the JSON API must reach the Worker, never the SPA fallback.
-		"run_worker_first": ["/api/*", "/*/*.git", "/*/*.git/*"]
+		// Git clients, the JSON API and MCP must reach the Worker, never the SPA fallback.
+		"run_worker_first": ["/api/*", "/mcp", "/*/*.git", "/*/*.git/*"]
 	},
 	"observability": {
 		"enabled": true,
@@ -29,10 +29,9 @@
 	"d1_databases": [
 		// Accounts, repo index, waitlist. Migrations in migrations/.
 		{ "binding": "DB", "database_name": "taru", "migrations_dir": "migrations" }
-	],
-	"vars": {
-		"TARU_PUBLIC_URL": "http://localhost:5173"
-	}
+	]
 	// Secrets (set with `wrangler secret put`, locally in .dev.vars):
-	//   TARU_ADMIN_TOKEN  password for git push and repo creation until accounts land
+	//   TARU_ADMIN_TOKEN     password for git push and repo creation until accounts land
+	//   GITHUB_MIRROR_TOKEN  optional: fine-grained PAT the GitHub copy pushes with (contents: read and write on the
+	//                        target repos). Unset locally, where the copy goes to scripts/fake-github.mjs
 }

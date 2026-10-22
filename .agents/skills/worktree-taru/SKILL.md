@@ -5,7 +5,9 @@ description: Make a Taru checkout work, isolated, in one command. Use at the sta
 
 # Worktree setup for Taru
 
-The main checkout is `C:\Users\kaust\OneDrive\Documents\dev\taru`. Never edit it; work in a worktree.
+The main checkout is `C:\Users\kaust\OneDrive\Documents\dev\taru` on the Windows laptop and `~/dev/taru` on the
+Linux cloud machine. Never edit it; work in a worktree. Setup and remove-worktree run on both: Linux links skills
+with a dir symlink and stops a worktree's processes by scanning `/proc` (its cwd or command line is inside it).
 
 ## Commands
 
@@ -37,9 +39,12 @@ git -C C:\Users\kaust\OneDrive\Documents\dev\taru worktree add -b <branch> C:\sr
 cd C:\src\taru-wt\<name>; bun run setup
 ```
 
+On Linux: `git -C ~/dev/taru worktree add -b <branch> ~/.t3/worktrees/taru/<name> origin/main`, then `bun run setup` in it.
+
 
 ## Cleanup
 
-- Stop only processes you started, by PID and with their children (`taskkill /T /PID <pid>`). Never by name or port.
+- Stop only processes you started, by PID and with their children (`taskkill /T /PID <pid>` on Windows; on Linux
+  start them with `setsid` and stop the group with `kill -TERM -<pid>`). Never by name or port.
 - Remove a worktree only when its work is merged or I say so, and never one a live T3 thread is using (check
   `t3_thread_list`). Use `bun run remove-worktree <path>`; plain `git worktree remove` leaves the junction behind.
