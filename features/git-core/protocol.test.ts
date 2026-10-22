@@ -2,7 +2,7 @@
 // served over node:http with a memory repo. This is the proof that Taru is a drop-in Git server.
 
 import { execFile } from "node:child_process";
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
@@ -193,6 +193,9 @@ describe("real git against the protocol", () => {
 		await git(source, "commit", "-q", "-m", "binary, big and empty files");
 
 		writeFile(source, "tools/run.sh", "#!/bin/sh\necho run\n");
+		// Executable on disk too, not only in the index: Linux git (core.filemode=true) would otherwise stage the
+		// file back to 100644 on the next `git add -A`, adding a tree object the fetch count doesn't expect.
+		chmodSync(join(source, "tools/run.sh"), 0o755);
 		writeFile(source, "src/lib/deep/nested/more/file.txt", "deep\n");
 		writeFile(source, "README.md", "# Demo\n\nA repo for Taru.\n\nThird commit.\n");
 		await git(source, "add", "-A");
