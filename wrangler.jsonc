@@ -31,5 +31,7 @@
 		{ "binding": "DB", "database_name": "taru", "migrations_dir": "migrations" }
 	]
 	// Secrets (set with `wrangler secret put`, locally in .dev.vars):
-	//   TARU_ADMIN_TOKEN  password for git push and repo creation until accounts land
+	//   TARU_ADMIN_TOKEN     password for git push and repo creation until accounts land
+	//   GITHUB_MIRROR_TOKEN  optional: fine-grained PAT the GitHub copy pushes with (contents: read and write on the
+	//                        target repos). Unset locally, where the copy goes to scripts/fake-github.mjs
 }

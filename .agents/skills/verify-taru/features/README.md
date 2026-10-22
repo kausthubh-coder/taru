@@ -22,3 +22,5 @@ The maintained source for verifying Taru's user-facing behavior. Read this, then
 | Waitlist | `waitlist.md` | Hero form, bottom form, no-JS form post, `POST /api/waitlist` |
 | Repos API | `repos-api.md` | `POST /api/repos`, `GET /api/repos`, `GET /api/repos/:owner/:name` |
 | Git push and clone | `git-push-clone.md` | Real `git` client over smart HTTP |
+| Import from GitHub | `github-import.md` | `POST /api/repos/:owner/:name/import` |
+| GitHub copy (mirror) | `github-mirror.md` | `PUT /api/repos/:owner/:name/mirror`, status on `GET /api/repos/:owner/:name` |

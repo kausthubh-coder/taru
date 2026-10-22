@@ -19,6 +19,8 @@ node .agents/skills/verify-taru/verify.mjs <command>
 | `waitlist <email>` | Fills the hero form in Chromium, submits, reads the status line, and checks D1 has exactly one row for that email |
 | `repos` | Prints `GET /api/repos` |
 | `git-roundtrip` | Creates a repo through the API, pushes a real-shaped repo with the real `git` client (nested dirs, empty file, binary, >1 MB file), clones it, compares HEAD and every file's bytes, runs `git fsck`, pushes an incremental change and pulls it |
+| `import <git-url>` | Creates a repo, imports it from a real Git server (a public GitHub URL), then compares GitHub and Taru: every branch and tag (`ls-remote`), HEAD, the default branch's history and every file's bytes, and `git fsck` of a `--mirror` clone from Taru |
+| `mirror` | Starts a fake GitHub (`scripts/fake-github.mjs`, real `git http-backend`, stopped by PID at the end), creates a repo with its mirror URL set, pushes with real `git`, waits for the copy's status to say `ok`, and compares the bare copy with Taru's refs and a clone; then an incremental push with a new branch, then a branch delete |
 | `stop` | Kills the process tree we started (by recorded PID), deletes `.verify/state`, keeps the evidence |
 
 ## Launch
@@ -33,7 +35,7 @@ node .agents/skills/verify-taru/verify.mjs <command>
 Everything goes to `.verify/evidence/<run>/` (printed by `launch`). It's gitignored, and it survives `stop`.
 - UI: a screenshot plus an ARIA snapshot with the page identity visible.
 - Mutations: the user action (form submit, `git push`) plus a second, read-only view of the stored result (D1 row, `git ls-remote`, a fresh clone).
-- Git: `git-roundtrip.md` is the transcript, with the admin token redacted.
+- Git: `git-roundtrip.md`, `import.md` and `mirror.md` are the transcripts, with the admin token redacted.
 - Proof standards: drive the real user path (browser form, real `git` binary, public HTTP), not internal functions. No mocks: the backend is real workerd with real Durable Objects, R2 and D1, only local and throwaway.
 
 ## Cleanup
