@@ -2,6 +2,20 @@
 // with large objects in R2. Implements git-core's Repo contract and runs the Git protocol next to its storage.
 
 import { DurableObject } from "cloudflare:workers";
+import {
+	commitChanges,
+	mergeBranches,
+	readFileAt,
+	readTreeAt,
+	type CommitChangesInput,
+	type CommitChangesOk,
+	type MergeInput,
+	type MergeOk,
+	type OperationError,
+	type ReadFileOk,
+	type ReadTreeInput,
+	type ReadTreeOk,
+} from "../../git-core/operations.ts";
 import { advertiseRefs, type GitService, receivePack, uploadPack } from "../../git-core/protocol.ts";
 import type { GitObject, ObjectType, Oid, RefUpdate, RefUpdateResult, Repo, StoredObject } from "../../git-core/repo.ts";
 import { readAll, streamOf } from "./body.ts";
@@ -189,6 +203,24 @@ export class RepoObject extends DurableObject<Env> implements Repo {
 
 	async gitReceivePack(body: ReadableStream<Uint8Array>): Promise<ReadableStream<Uint8Array>> {
 		return streamOf(await receivePack(await readAll(body), this));
+	}
+
+	// --- Agent API: the same operations, over this object's storage. Ref writes go through updateRefs -----
+
+	async agentReadTree(input: ReadTreeInput): Promise<ReadTreeOk | OperationError> {
+		return readTreeAt(this, input);
+	}
+
+	async agentReadFile(input: ReadTreeInput): Promise<ReadFileOk | OperationError> {
+		return readFileAt(this, input);
+	}
+
+	async agentCommit(input: CommitChangesInput): Promise<CommitChangesOk | OperationError> {
+		return commitChanges(this, input);
+	}
+
+	async agentMerge(input: MergeInput): Promise<MergeOk | OperationError> {
+		return mergeBranches(this, input);
 	}
 }
 
