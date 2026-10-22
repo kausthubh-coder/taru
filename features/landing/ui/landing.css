@@ -104,8 +104,7 @@
 	color: var(--text-muted);
 }
 
-/* The strip: three places, each a pane with a note under it saying what happens there and whether it works yet. On a
-   desktop the panes join into one window, so the three places read as one system. */
+/* The strip: three places, each a pane with a note under it saying what happens there. On a desktop the panes join into one window, so the three places read as one system. */
 
 .strip {
 	margin-top: clamp(var(--space-8), 4vw, var(--space-12));
@@ -124,14 +123,8 @@
 }
 
 .place-note {
-	display: grid;
-	justify-items: start;
-	gap: var(--space-2);
-	padding-inline: var(--space-4);
-}
-
-.place-note p {
 	max-width: 40ch;
+	padding-inline: var(--space-4);
 	font-size: var(--text-small);
 	color: var(--text-muted);
 }
@@ -348,8 +341,8 @@
 	color: var(--text-muted);
 }
 
-/* What works: a board with one column per status. The column's edge says the same thing as the status dot: a solid
-   surface for what exists, a line for what's being built, a dashed line for what's planned. */
+/* What works: a board with one column per status, sized by how much is in it. The column's edge follows the status:
+   a solid surface for what works today, a line for what's next, a dashed line for what comes later. */
 
 .board {
 	display: grid;
@@ -358,9 +351,14 @@
 	margin-top: var(--space-12);
 }
 
+/* Works today takes two thirds and both rows; next and later stack beside it. */
 @media (width >= 960px) {
 	.board {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+	}
+
+	.column-today {
+		grid-row: span 2;
 	}
 }
 
@@ -378,7 +376,7 @@
 	border-color: var(--line-input);
 }
 
-.column[data-status="planned"] {
+.column[data-status="later"] {
 	border: 1px dashed var(--line-input);
 }
 
@@ -396,6 +394,14 @@
 	color: var(--text-muted);
 }
 
+/* Wide enough for two columns of items at about 45 characters each. */
+@media (width >= 1120px) {
+	.column-today ul {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-6) var(--space-8);
+	}
+}
+
 .column b,
 .callout b {
 	font-weight: 600;
@@ -404,6 +410,7 @@
 
 /* The exposure warning sits with what works today, because it's about today. */
 .callout {
+	max-width: var(--measure);
 	margin-top: auto;
 	padding-top: var(--space-4);
 	border-top: 1px solid var(--line);

@@ -101,6 +101,6 @@ h1 { margin: 0; font-size: 84px; font-weight: 600; line-height: 0.98; letter-spa
 		<div class="place">git pull <span class="sha">7f3c2a1</span></div>
 		<div class="place">GitHub <span class="sha">7f3c2a1</span></div>
 	</div>
-	<p class="status">Plain git works today. The GitHub copy and the agent API are being built.</p>
+	<p class="status">Open source. Runs in your own Cloudflare account.</p>
 </div>`;
 }
