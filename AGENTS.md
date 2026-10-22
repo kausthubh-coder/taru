@@ -33,7 +33,7 @@ React with Vite, Vitest. Open source under AGPL-3.0.
 | `public/brand/` | Logo and icon SVGs. `scripts/brand-assets.mjs` rebuilds the PNG icons, `favicon.ico` and `og.png` from them |
 | `src/` | React entry, thin: renders features |
 | `migrations/` | D1 migrations |
-| `scripts/` | `setup.mjs`, `doctor.mjs`, `remove-worktree.mjs`, `cloud.mjs`, `brand-assets.mjs` |
+| `scripts/` | `setup.mjs`, `doctor.mjs`, `remove-worktree.mjs`, `cloud.mjs`, `fake-github.mjs` (real `git http-backend` standing in for GitHub), `demo.mjs` (the 60-second demo, with checks), `brand-assets.mjs` |
 | `wrangler.jsonc` | Bindings: `REPO`, `BLOBS`, `DB`. Run `bun run cf-typegen` after changing it |
 
 Each feature lives in one folder. Server code goes in `features/<name>/server/`, browser code in

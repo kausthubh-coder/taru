@@ -110,14 +110,29 @@ function inflate(input: Uint8Array, offset: number, size: number): { data: Uint8
 	return { data: output.subarray(0, size), consumed: strm.next_in - offset };
 }
 
-/** Reads a pack and returns every object in it, fully resolved. Thin-pack bases are read from `repo`. */
-export async function readPack(pack: Uint8Array, repo: Repo): Promise<StoredObject[]> {
+/** Thrown when a pack's objects, expanded, would be more than the caller can hold. */
+export class ObjectBytesLimitError extends Error {
+	/** HTTP status for callers that report it: the request is too large. */
+	readonly status = 413;
+}
+
+/**
+ * Reads a pack and returns every object in it, fully resolved. Thin-pack bases are read from `repo`.
+ * Deltas make a pack much smaller than its objects (GitHub's 11 MB pack of express is 165 MB of objects), so a
+ * caller with bounded memory passes `maxObjectBytes`, and reading stops with ObjectBytesLimitError past it.
+ */
+export async function readPack(pack: Uint8Array, repo: Repo, maxObjectBytes = Number.POSITIVE_INFINITY): Promise<StoredObject[]> {
 	const entries = await scanPack(pack);
 	const byOffset = new Map<number, StoredObject>();
 	const byOid = new Map<Oid, StoredObject>();
 	const objects: StoredObject[] = [];
+	let objectBytes = 0;
 
 	async function resolved(offset: number, type: ObjectType, data: Uint8Array): Promise<void> {
+		objectBytes += data.length;
+		if (objectBytes > maxObjectBytes) {
+			throw new ObjectBytesLimitError(`the pack's objects unpack to over the ${maxObjectBytes} byte limit`);
+		}
 		const object: StoredObject = { type, data, oid: await hashObject({ type, data }) };
 		byOffset.set(offset, object);
 		byOid.set(object.oid, object);
