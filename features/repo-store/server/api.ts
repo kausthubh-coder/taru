@@ -2,7 +2,7 @@
 
 import { isAdmin, unauthorized } from "./auth.ts";
 import { byteLimit, readAll } from "./body.ts";
-import { findRepo, nameProblem, repoKey, type RepoRow } from "./repos.ts";
+import { findRepo, listRepos as listRepoRows, nameProblem, repoKey, type RepoRow } from "./repos.ts";
 
 /** A create request is a few dozen bytes of JSON; anything near this is not one. */
 const MAX_JSON_BODY = 64 * 1024;
@@ -40,8 +40,7 @@ function describe(origin: string, repo: RepoRow) {
 }
 
 async function listRepos(env: Env, origin: string): Promise<Response> {
-	const { results } = await env.DB.prepare("SELECT owner, name, created_at FROM repos ORDER BY created_at DESC, id DESC").all<RepoRow>();
-	return Response.json({ repos: results.map((row) => describe(origin, row)) });
+	return Response.json({ repos: (await listRepoRows(env.DB)).map((row) => describe(origin, row)) });
 }
 
 async function createRepo(request: Request, env: Env, origin: string): Promise<Response> {

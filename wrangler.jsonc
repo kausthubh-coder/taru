@@ -9,8 +9,8 @@
 	"compatibility_flags": ["nodejs_compat"],
 	"assets": {
 		"not_found_handling": "single-page-application",
-		// Git clients and the JSON API must reach the Worker, never the SPA fallback.
-		"run_worker_first": ["/api/*", "/*/*.git", "/*/*.git/*"]
+		// Git clients, the JSON API and MCP must reach the Worker, never the SPA fallback.
+		"run_worker_first": ["/api/*", "/mcp", "/*/*.git", "/*/*.git/*"]
 	},
 	"observability": {
 		"enabled": true,

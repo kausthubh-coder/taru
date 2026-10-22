@@ -1,5 +1,6 @@
 // Worker entry. Routing only: each route hands off to its feature folder.
 
+import { handleMcp } from "../features/agent-api/server/mcp.ts";
 import { handleAgentApi, matchAgentApiPath } from "../features/agent-api/server/routes.ts";
 import { handleGitHttp, matchGitPath } from "../features/git-http/server/routes.ts";
 import { handleReposApi } from "../features/repo-store/server/api.ts";
@@ -17,6 +18,7 @@ export default {
 		const agentPath = matchAgentApiPath(url.pathname);
 		if (agentPath) return handleAgentApi(request, env, agentPath);
 
+		if (url.pathname === "/mcp") return handleMcp(request, env);
 		if (url.pathname === "/api/waitlist") return handleWaitlist(request, env);
 		if (url.pathname.startsWith("/api/repos")) return handleReposApi(request, env);
 
