@@ -49,6 +49,25 @@ D1 (DB): accounts, repo index, waitlist
 - **Small objects go in SQLite, large blobs in R2.** Most source files are under the threshold, so clones read
   SQLite and make few R2 requests. R2 charges per request. The exact threshold is set in repo-store.
 
+## Import and the GitHub copy
+
+Both run inside the RepoObject with the client half of the protocol (`features/git-core/client.ts`, protocol v0,
+plain `fetch`), so GitHub is just another Git server to us.
+
+- **Import** (`POST /api/repos/:owner/:name/import {url}`) fills an empty repo: fetch the remote's `refs/heads/*`
+  and `refs/tags/*` in one pack, store the objects in chunks, set the refs, point HEAD where the remote's symref
+  points. Only into an empty repo (409 otherwise). `https://` anywhere; `http://` only on localhost, for the fake
+  GitHub tests use.
+- **The copy** (`PUT /api/repos/:owner/:name/mirror {url}`) is one-way: Taru is the source of truth. Every
+  successful `updateRefs`, whoever called it (push, import, the agent API), schedules a Durable Object alarm
+  about a second later. The alarm reads the remote's refs, sends the objects it lacks, and makes its
+  `refs/heads/*` and `refs/tags/*` equal ours, force-updates and deletes included; `refs/pull/*` and the rest are
+  left alone. The push is not atomic: a ref GitHub refuses is reported in the status, the others still land.
+  Failures retry with backoff (5 s to 1 h, six retries) and then wait for the next change. Status lives in the
+  repo's `meta` table and shows on `GET /api/repos/:owner/:name`.
+- **Token:** the `GITHUB_MIRROR_TOKEN` secret (a fine-grained PAT) goes out as HTTP Basic `x-access-token:<token>`,
+  only to `github.com`. Unset locally, where the copy goes to `scripts/fake-github.mjs`.
+
 ## Agent API and MCP
 
 Scion's second idea, applied: an agent edits a repo through the server, with no clone. Both surfaces run
@@ -84,6 +103,13 @@ hooks in).
 - A single push can be at most 100 MB (the Workers request limit). Bigger repos get imported from GitHub by the
   server, not pushed.
 - Request bodies are buffered in memory. That's fine for normal pushes. Streaming comes when a real repo needs it.
+- Import and the copy hold all the objects they move in memory, inside a Durable Object with 128 MB. The pack is
+  not the limit: GitHub's 11 MB pack of expressjs/express unpacks to 165 MB of objects, and the pack we push has no
+  deltas and is copied a few times while it's built. So both stop at 48 MiB of objects (`MAX_SYNC_OBJECT_BYTES`)
+  with a 413, and the copy marks itself failed instead of retrying. Measured in Node: mirroring express needed a
+  52 MB request and peaked at 660 MB. Bigger repos need streaming packs with deltas, which aren't built yet.
+- `git push` (receive-pack) has no such cap yet: a 100 MB push can unpack to far more than 128 MB. Locally it works
+  (workerd doesn't enforce the limit); in production it would fail. Same fix: streaming.
 - The server speaks Git protocol v0/v1. Modern clients ask for v2 and fall back cleanly.
 - **Auth is temporary.** Creating a repo and pushing need HTTP Basic auth with the password `TARU_ADMIN_TOKEN`.
   Public clone is open. Accounts (Better Auth with GitHub sign-in) replace this in a later step.

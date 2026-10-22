@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Drives a real, isolated Taru instance and saves evidence. Run from the repo root:
 //   node .agents/skills/verify-taru/verify.mjs <command> [args]
-// Commands: launch | doctor | stop | shot <name> [--phone] [--dark] | waitlist <email> | repos | git-roundtrip | agent-api | mcp
+// Commands: launch | doctor | stop | shot <name> [--phone] [--dark] | waitlist <email> | repos | git-roundtrip
+//           import <git-url> | mirror | agent-api | mcp
 // Instance state: .verify/instance.json. Throwaway backend: .verify/state. Evidence: .verify/evidence/<run>/ (kept).
 import { execFileSync, execSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -285,6 +286,196 @@ async function gitRoundtrip() {
 	log(`PASS; transcript in ${relative(root, join(out, "git-roundtrip.md"))}`);
 }
 
+async function callApi(inst, path, init = {}) {
+	const token = adminToken();
+	const res = await fetch(`${inst.url}${path}`, {
+		...init,
+		headers: { authorization: `Basic ${btoa(`verify:${token}`)}`, "content-type": "application/json", ...init.headers },
+	});
+	return { status: res.status, body: await res.json().catch(() => null) };
+}
+
+/** "<oid> <ref>" lines for branches and tags, sorted by ref, from `git ls-remote` output. */
+function refLines(lsRemote) {
+	return lsRemote
+		.split("\n")
+		.filter((line) => /\trefs\/(heads|tags)\//.test(line) && !line.endsWith("^{}"))
+		.map((line) => line.split("\t").toReversed().join(" "))
+		.toSorted();
+}
+
+function refLinesFromApi(refs) {
+	return Object.entries(refs)
+		.filter(([name]) => name.startsWith("refs/heads/") || name.startsWith("refs/tags/"))
+		.map(([name, oid]) => `${name} ${oid}`)
+		.toSorted();
+}
+
+async function importFromGithub(url) {
+	if (!url) fail("usage: import <https://github.com/owner/repo.git>");
+	const inst = instance();
+	const out = evidenceDir();
+	const transcript = [];
+	const step = (title, value) => {
+		transcript.push(`## ${title}\n${value}`);
+		log(`${title}: ${value.split("\n")[0]}`);
+	};
+	const name = `import-${Date.now()}`;
+	const created = await callApi(inst, "/api/repos", { method: "POST", body: JSON.stringify({ owner: "verify", name }) });
+	step("create repo", `${created.status} ${JSON.stringify(created.body)}`);
+	if (created.status !== 201) fail("could not create repo");
+
+	const started = Date.now();
+	const imported = await callApi(inst, `/api/repos/verify/${name}/import`, { method: "POST", body: JSON.stringify({ url }) });
+	step(`import ${url}`, `${imported.status} in ${((Date.now() - started) / 1000).toFixed(1)}s: ${imported.body?.objects} objects, ${Object.keys(imported.body?.refs ?? {}).length} refs, head ${imported.body?.head}`);
+	if (imported.status !== 200) fail(`import failed: ${JSON.stringify(imported.body)}`);
+
+	const taruUrl = `${inst.url}/verify/${name}.git`;
+	const work = mkdtempSync(join(tmpdir(), "taru-verify-import-"));
+	const githubRefs = refLines(git(work, "ls-remote", url));
+	const taruRefs = refLines(git(work, "ls-remote", taruUrl));
+	const sameRefs = githubRefs.join("\n") === taruRefs.join("\n");
+	step(`refs match (${githubRefs.length} branches and tags on GitHub, ${taruRefs.length} on Taru)`, String(sameRefs));
+	if (!sameRefs) {
+		step("refs on GitHub", githubRefs.join("\n"));
+		step("refs on Taru", taruRefs.join("\n"));
+	}
+	const headOf = (remote) => /^ref: (\S+)\tHEAD/m.exec(git(work, "ls-remote", "--symref", remote, "HEAD"))?.[1];
+	const sameHead = headOf(url) === headOf(taruUrl);
+	step(`HEAD matches (${headOf(url)})`, String(sameHead));
+
+	const fromGithub = join(work, "github");
+	const fromTaru = join(work, "taru");
+	git(work, "clone", "-q", url, fromGithub);
+	git(work, "clone", "-q", taruUrl, fromTaru);
+	const sameHistory = git(fromGithub, "rev-parse", "HEAD") === git(fromTaru, "rev-parse", "HEAD") && git(fromGithub, "rev-list", "--count", "HEAD") === git(fromTaru, "rev-list", "--count", "HEAD");
+	step(`history matches (${git(fromTaru, "rev-list", "--count", "HEAD")} commits on the default branch)`, String(sameHistory));
+	const sameFiles = filesHash(fromGithub) === filesHash(fromTaru);
+	step("every file's bytes match", String(sameFiles));
+	const mirrorClone = join(work, "taru-mirror");
+	git(work, "clone", "-q", "--mirror", taruUrl, mirrorClone);
+	const fsck = git(mirrorClone, "fsck", "--full", "--no-dangling") || "clean";
+	step("fsck of a --mirror clone from Taru (every object)", fsck);
+
+	writeFileSync(join(out, "import.md"), transcript.join("\n\n"));
+	rmSync(work, { recursive: true, force: true });
+	if (!sameRefs || !sameHead || !sameHistory || !sameFiles || fsck !== "clean") fail(`import did not match; transcript in ${relative(root, join(out, "import.md"))}`);
+	log(`PASS; transcript in ${relative(root, join(out, "import.md"))}`);
+}
+
+/** Starts scripts/fake-github.mjs in its own process group; returns its port and a stop() that kills by PID. */
+async function startFakeGithub(githubRoot) {
+	const child = spawn(process.execPath, [join(root, "scripts", "fake-github.mjs"), githubRoot], { stdio: ["ignore", "pipe", "inherit"], detached: true });
+	const port = await new Promise((done, reject) => {
+		child.stdout.on("data", (chunk) => {
+			const m = /listening (\d+)/.exec(String(chunk));
+			if (m) done(m[1]);
+		});
+		child.on("exit", (code) => reject(new Error(`fake github exited with ${code}`)));
+	});
+	return { port, pid: child.pid, stop: () => killTree(child.pid) };
+}
+
+async function mirror() {
+	const inst = instance();
+	const out = evidenceDir();
+	const transcript = [];
+	const step = (title, value) => {
+		transcript.push(`## ${title}\n${value}`);
+		log(`${title}: ${value.split("\n")[0]}`);
+	};
+	const work = mkdtempSync(join(tmpdir(), "taru-verify-mirror-"));
+	const githubRoot = join(work, "github");
+	const bare = join(githubRoot, "verify", "copy.git");
+	mkdirSync(join(githubRoot, "verify"), { recursive: true });
+	git(work, "init", "-q", "--bare", "-b", "main", bare);
+	const github = await startFakeGithub(githubRoot);
+	step("fake GitHub", `pid ${github.pid} on port ${github.port}, bare repo ${bare}`);
+
+	try {
+		const name = `mirror-${Date.now()}`;
+		const created = await callApi(inst, "/api/repos", { method: "POST", body: JSON.stringify({ owner: "verify", name }) });
+		step("create repo", `${created.status}`);
+		if (created.status !== 201) fail("could not create repo");
+		const mirrorUrl = `http://127.0.0.1:${github.port}/verify/copy.git`;
+		const set = await callApi(inst, `/api/repos/verify/${name}/mirror`, { method: "PUT", body: JSON.stringify({ url: mirrorUrl }) });
+		step("set mirror url", `${set.status} ${JSON.stringify(set.body)}`);
+		if (set.status !== 200) fail("could not set the mirror");
+
+		const token = adminToken();
+		const remote = `${inst.url.replace("://", `://verify:${token}@`)}/verify/${name}.git`;
+		const src = join(work, "src");
+		mkdirSync(join(src, "lib", "deep"), { recursive: true });
+		git(work, "init", "-q", src);
+		writeFileSync(join(src, "README.md"), "# mirror\n");
+		writeFileSync(join(src, "lib", "deep", "util.ts"), "export const answer = 42;\n");
+		writeFileSync(join(src, "bytes.bin"), Buffer.from(Array.from({ length: 4096 }, (_, i) => (i * 7) & 0xff)));
+		git(src, "add", "-A");
+		git(src, "commit", "-qm", "first");
+		writeFileSync(join(src, "big.dat"), Buffer.alloc(1_200_000, 7));
+		git(src, "add", "-A");
+		git(src, "commit", "-qm", "second: a file over 1 MB");
+		git(src, "tag", "-a", "v1", "-m", "release 1");
+
+		// The copy is pushed from an alarm about a second after the ref change; wait for the status to say so
+		// and for the bare repo to really hold the same branches and tags.
+		async function waitForCopy(label) {
+			const deadline = Date.now() + 30_000;
+			// Polling is the point: the copy lands when the alarm fires.
+			/* oxlint-disable no-await-in-loop */
+			for (;;) {
+				const shown = await callApi(inst, `/api/repos/verify/${name}`);
+				const status = shown.body?.mirror?.status;
+				const taruRefs = refLinesFromApi(shown.body?.refs ?? {});
+				const copyRefs = refLines(git(work, "ls-remote", bare));
+				if (status?.state === "ok" && taruRefs.join("\n") === copyRefs.join("\n")) {
+					step(`${label}: copy matches Taru (${copyRefs.length} refs)`, `${JSON.stringify(status)}\n${copyRefs.join("\n")}`);
+					return;
+				}
+				if (Date.now() > deadline) {
+					step(`${label}: copy did not catch up`, `status ${JSON.stringify(status)}\nTaru: ${taruRefs.join(", ")}\ncopy: ${copyRefs.join(", ")}`);
+					throw new Error(`${label}: the copy did not match within 30s`);
+				}
+				await new Promise((r) => setTimeout(r, 500));
+			}
+			/* oxlint-enable no-await-in-loop */
+		}
+
+		step("push to Taru", git(src, "push", "-q", remote, "main", "v1") || "(no output)");
+		await waitForCopy("initial push");
+		const clone = join(work, "clone-of-copy");
+		git(work, "clone", "-q", bare, clone);
+		step("clone of the copy matches the source (HEAD and every file's bytes)", String(git(src, "rev-parse", "HEAD") === git(clone, "rev-parse", "HEAD") && filesHash(src) === filesHash(clone)));
+		step("fsck of the copy", git(bare, "fsck", "--full") || "clean");
+
+		writeFileSync(join(src, "lib", "deep", "util.ts"), "export const answer = 43;\n");
+		git(src, "commit", "-qam", "third: incremental change");
+		git(src, "checkout", "-qb", "feature");
+		writeFileSync(join(src, "feature.txt"), "feature\n");
+		git(src, "add", "-A");
+		git(src, "commit", "-qm", "feature work");
+		git(src, "checkout", "-q", "main");
+		step("incremental push (main and a new branch)", git(src, "push", "-q", remote, "main", "feature") || "(no output)");
+		await waitForCopy("incremental push");
+		step("copy's feature branch is the source's", String(git(bare, "rev-parse", "refs/heads/feature") === git(src, "rev-parse", "feature")));
+
+		step("delete the branch on Taru", git(src, "push", "-q", remote, "--delete", "feature") || "(no output)");
+		await waitForCopy("branch delete");
+		step("copy has no feature branch", String(!git(work, "ls-remote", bare).includes("refs/heads/feature")));
+		step("fsck of the copy after everything", git(bare, "fsck", "--full", "--no-dangling") || "clean");
+		writeFileSync(join(out, "mirror.md"), transcript.join("\n\n").replaceAll(token, "<admin-token>"));
+		if (transcript.some((entry) => entry.endsWith("\nfalse"))) fail(`a check was false; transcript in ${relative(root, join(out, "mirror.md"))}`);
+		log(`PASS; transcript in ${relative(root, join(out, "mirror.md"))}`);
+	} catch (error) {
+		writeFileSync(join(out, "mirror.md"), transcript.join("\n\n").replaceAll(adminToken(), "<admin-token>"));
+		fail(`${error.message}; transcript in ${relative(root, join(out, "mirror.md"))}`);
+	} finally {
+		github.stop();
+		log(`stopped fake GitHub pid ${github.pid}`);
+		rmSync(work, { recursive: true, force: true });
+	}
+}
+
 /** A transcript writer: each step is logged and kept for the evidence file, with the token redacted at the end. */
 function transcriptFor(file, token) {
 	const steps = [];
@@ -537,6 +728,12 @@ switch (command) {
 	case "git-roundtrip":
 		await gitRoundtrip();
 		break;
+	case "import":
+		await importFromGithub(args[0]);
+		break;
+	case "mirror":
+		await mirror();
+		break;
 	case "agent-api":
 		await agentApi();
 		break;
@@ -544,5 +741,5 @@ switch (command) {
 		await mcp();
 		break;
 	default:
-		fail("commands: launch | doctor | stop | shot <name> [--phone] [--dark] | waitlist <email> | repos | git-roundtrip | agent-api | mcp");
+		fail("commands: launch | doctor | stop | shot <name> [--phone] [--dark] | waitlist <email> | repos | git-roundtrip | import <git-url> | mirror | agent-api | mcp");
 }

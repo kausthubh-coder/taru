@@ -175,7 +175,8 @@ export async function uploadPack(requestBody: Uint8Array, repo: Repo): Promise<U
 	return out.bytes();
 }
 
-async function* loadObjects(repo: Repo, oids: Oid[]): AsyncGenerator<GitObject> {
+/** Objects by id, in order, for writePack. Shared with the client side (sync.ts). */
+export async function* loadObjects(repo: Repo, oids: Oid[]): AsyncGenerator<GitObject> {
 	for (const oid of oids) {
 		const object = await repo.getObject(oid);
 		if (!object) throw new Error(`object ${oid} is missing`);
@@ -290,7 +291,8 @@ function reportStatus(commands: PushCommand[], unpackError: string | null, capab
 	return out.bytes();
 }
 
-async function hasMissingReferences(repo: Repo, packed: StoredObject[], packedOids: Set<Oid>): Promise<boolean> {
+/** True when an object in `packed` points at one that is neither in the pack nor in the repo. Shared with sync.ts. */
+export async function hasMissingReferences(repo: Repo, packed: StoredObject[], packedOids: Set<Oid>): Promise<boolean> {
 	const referenced = new Set<Oid>();
 	const note = (oid: Oid): void => {
 		if (!packedOids.has(oid)) referenced.add(oid);
