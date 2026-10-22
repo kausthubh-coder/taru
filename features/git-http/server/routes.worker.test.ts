@@ -21,10 +21,6 @@ async function gzip(bytes: Uint8Array): Promise<Uint8Array> {
 	return readAll(new Blob([bytes]).stream().pipeThrough(new CompressionStream("gzip")));
 }
 
-// git-core's protocol functions are not implemented on this branch; every request that reaches them fails
-// with this message. Tests below stop at that boundary.
-const NOT_IMPLEMENTED = /not implemented/;
-
 describe("git smart HTTP", () => {
 	beforeAll(applyRepoMigrations);
 
@@ -74,20 +70,26 @@ describe("git smart HTTP", () => {
 
 	// The requests below are well-formed and reach git-core, which throws on this branch. That they fail with
 	// git-core's error (and not 401/404/413) shows routing, auth, lookup and body handling all passed.
-	it("forwards upload-pack requests to the protocol with the right content types", async () => {
+	it("serves the real protocol with the right content types", async () => {
 		await createRepo("kaust", "proto");
 
 		const advertise = await call("/kaust/proto.git/info/refs?service=git-upload-pack");
-		expect(advertise.status).toBe(500);
-		expect(await advertise.text()).toMatch(NOT_IMPLEMENTED);
+		expect(advertise.status).toBe(200);
+		expect(advertise.headers.get("Content-Type")).toBe("application/x-git-upload-pack-advertisement");
+		expect(advertise.headers.get("Cache-Control")).toBe("no-cache");
+		const advertisement = await advertise.text();
+		// An empty repo: the service line, a flush, then the zero-id capabilities line.
+		expect(advertisement.startsWith("001e# service=git-upload-pack\n0000")).toBe(true);
+		expect(advertisement).toContain(`${"0".repeat(40)} capabilities^{}`);
 
+		// A client with nothing to want sends just a flush; the server answers with an empty result.
 		const fetch = await call("/kaust/proto.git/git-upload-pack", {
 			method: "POST",
 			headers: { "Content-Type": "application/x-git-upload-pack-request" },
 			body: "0000",
 		});
-		expect(fetch.status).toBe(500);
-		expect(await fetch.text()).toMatch(NOT_IMPLEMENTED);
+		expect(fetch.status).toBe(200);
+		expect(fetch.headers.get("Content-Type")).toBe("application/x-git-upload-pack-result");
 		expect(fetch.headers.get("Cache-Control")).toBe("no-cache");
 
 		const push = await call("/kaust/proto.git/git-receive-pack", {
@@ -95,8 +97,8 @@ describe("git smart HTTP", () => {
 			headers: { "Content-Type": "application/x-git-receive-pack-request", Authorization: adminAuth() },
 			body: "0000",
 		});
-		expect(push.status).toBe(500);
-		expect(await push.text()).toMatch(NOT_IMPLEMENTED);
+		expect(push.status).toBe(200);
+		expect(push.headers.get("Content-Type")).toBe("application/x-git-receive-pack-result");
 	});
 });
 
