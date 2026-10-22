@@ -177,6 +177,7 @@ async function expectMirrorMatchesOrigin(): Promise<void> {
 	expect(await git(mirrorDir, "fsck", "--full", "--strict", "--no-dangling")).toBe("");
 	for (const line of await syncedRefs(mirrorDir)) {
 		const ref = line.split(" ")[1];
+		// oxlint-disable-next-line no-await-in-loop
 		if (ref.startsWith("refs/heads/")) await expectSameHistory(originDir, mirrorDir, ref);
 	}
 }

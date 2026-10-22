@@ -16,7 +16,9 @@ const PUT_CHUNK = 500;
 /** Haves sent in one fetch; more only makes the request bigger with little to gain. */
 const MAX_HAVES = 256;
 
-export interface SyncOptions extends ClientOptions {
+export interface SyncOptions {
+	/** Extra request headers, e.g. Authorization. */
+	headers?: Record<string, string>;
 	/** Largest pack accepted or sent, in bytes. */
 	maxPackBytes: number;
 }
