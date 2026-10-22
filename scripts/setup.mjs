@@ -2,7 +2,7 @@
 // picks a free dev port, and applies D1 migrations to the local database.
 // Usage: bun run setup
 import { execSync } from "node:child_process";
-import { copyFileSync, existsSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
 
@@ -14,7 +14,7 @@ run("bun install");
 // Claude Code reads .claude/skills, Codex reads .agents/skills: one folder, linked. Git can't store the link.
 const claudeSkills = join(root, ".claude", "skills");
 if (!existsSync(claudeSkills)) {
-	execSync(`node -e "require('fs').mkdirSync('.claude',{recursive:true})"`, { cwd: root });
+	mkdirSync(join(root, ".claude"), { recursive: true });
 	symlinkSync(join(root, ".agents", "skills"), claudeSkills, "junction");
 	console.warn("linked .claude/skills -> .agents/skills");
 }
