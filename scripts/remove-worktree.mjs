@@ -44,9 +44,16 @@ if (process.platform === "win32") {
 	// Linux: a dev server started as `node node_modules/vite/...` has a relative command line, so match its
 	// working directory too, not only the command line (workerd's has the absolute path).
 	const inside = (path) => path === target || path.startsWith(`${target}/`);
+	// `bun run remove-worktree <path>` and its shell have the path in their command lines: never stop our own
+	// ancestors. The parent pid is the 4th field of /proc/<pid>/stat, after the ")" that ends the command name.
+	const ancestors = new Set();
+	for (let pid = process.pid; pid > 1; ) {
+		ancestors.add(pid);
+		pid = Number(readFileSync(`/proc/${pid}/stat`, "utf8").split(")").pop().trim().split(" ")[1]);
+	}
 	for (const entry of readdirSync("/proc")) {
 		const pid = Number(entry);
-		if (!pid || pid === process.pid) continue;
+		if (!pid || ancestors.has(pid)) continue;
 		try {
 			const cwd = readlinkSync(`/proc/${pid}/cwd`);
 			const cmdline = readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0");
