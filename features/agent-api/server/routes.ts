@@ -39,14 +39,10 @@ export async function handleAgentApi(request: Request, env: Env, path: AgentApiP
 	}
 
 	if (request.method !== "POST") return respond({ status: 405, body: { error: "method_not_allowed", message: "use POST" } });
-	if (!(await isAdmin(request, env))) {
-		return Response.json(
-			{ error: "unauthorized", message: "writes need HTTP Basic auth with the admin token as the password" },
-			{ status: 401, headers: { "WWW-Authenticate": 'Basic realm="taru"' } },
-		);
-	}
 	const declared = Number(request.headers.get("Content-Length"));
 	if (declared > MAX_AGENT_BODY) return respond({ status: 413, body: { error: "too_large", message: `body exceeds ${MAX_AGENT_BODY} bytes` } });
+	// The (bounded) body is read before the auth check. Answering 401 with the body unread makes workerd
+	// close the connection, and the next request on the dev proxy's pooled connection fails.
 	let body: unknown;
 	const limit = { exceeded: false };
 	try {
@@ -55,6 +51,12 @@ export async function handleAgentApi(request: Request, env: Env, path: AgentApiP
 	} catch {
 		if (limit.exceeded) return respond({ status: 413, body: { error: "too_large", message: `body exceeds ${MAX_AGENT_BODY} bytes` } });
 		return respond(invalid("body must be JSON"));
+	}
+	if (!(await isAdmin(request, env))) {
+		return Response.json(
+			{ error: "unauthorized", message: "writes need HTTP Basic auth with the admin token as the password" },
+			{ status: 401, headers: { "WWW-Authenticate": 'Basic realm="taru"' } },
+		);
 	}
 
 	if (path.op === "commits") {

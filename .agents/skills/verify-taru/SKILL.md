@@ -1,6 +1,6 @@
 ---
 name: verify-taru
-description: Launch an isolated Taru instance (Worker + landing page + Git smart HTTP on a throwaway local backend), drive it like a user (browser, real git client, HTTP API) and save evidence. Use before saying a Taru change works, and to check git push/clone, the waitlist, the repos API or the landing page.
+description: Launch an isolated Taru instance (Worker + landing page + Git smart HTTP on a throwaway local backend), drive it like a user (browser, real git client, HTTP API, MCP client) and save evidence. Use before saying a Taru change works, and to check git push/clone, the agent API, the MCP server, the waitlist, the repos API or the landing page.
 ---
 
 # Verify Taru
@@ -19,6 +19,8 @@ node .agents/skills/verify-taru/verify.mjs <command>
 | `waitlist <email>` | Fills the hero form in Chromium, submits, reads the status line, and checks D1 has exactly one row for that email |
 | `repos` | Prints `GET /api/repos` |
 | `git-roundtrip` | Creates a repo through the API, pushes a real-shaped repo with the real `git` client (nested dirs, empty file, binary, >1 MB file), clones it, compares HEAD and every file's bytes, runs `git fsck`, pushes an incremental change and pulls it |
+| `agent-api` | Pushes a real-shaped repo with git, commits through the agent REST API (nested edit, binary, delete, new folder, executable), `git pull`s and compares every byte, checks the CAS 409, merges a branch (three-way) and a conflicting one (409 report), then interleaves a `git push` and an API commit |
+| `mcp` | Same proof through `/mcp`: raw JSON-RPC `initialize` and `tools/list`, then the official SDK client calls `read_file` and `commit_changes`, and `git pull` shows the edit |
 | `stop` | Kills the process tree we started (by recorded PID), deletes `.verify/state`, keeps the evidence |
 
 ## Launch

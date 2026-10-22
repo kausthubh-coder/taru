@@ -25,6 +25,7 @@
 	"devDependencies": {
 		"@cloudflare/vite-plugin": "^1.64.0",
 		"@cloudflare/vitest-plugin": "^1.4.6",
+		"@modelcontextprotocol/sdk": "^1.32.1",
 		"@types/node": "^26.6.5",
 		"@types/pako": "^3.0.0",
 		"@types/react": "^19.2.18",
