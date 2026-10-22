@@ -145,7 +145,8 @@ export interface PushResult {
 export async function pushPack(url: string, commands: RefUpdate[], pack: Uint8Array, remoteCapabilities: Set<string>, options: ClientOptions): Promise<PushResult> {
 	if (commands.length === 0) return { unpack: "ok", results: [] };
 	const request = new PktWriter();
-	const caps = ["report-status", "side-band-64k", "atomic", "ofs-delta"].filter((cap) => remoteCapabilities.has(cap));
+	// Not atomic on purpose: a mirror should land every ref it can and report the one GitHub refuses.
+	const caps = ["report-status", "side-band-64k", "ofs-delta"].filter((cap) => remoteCapabilities.has(cap));
 	if (commands.some((command) => command.new === null) && !remoteCapabilities.has("delete-refs")) {
 		throw remoteError("remote does not support deleting refs");
 	}
