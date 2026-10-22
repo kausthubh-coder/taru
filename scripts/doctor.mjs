@@ -28,9 +28,13 @@ const skillsLink = join(root, ".claude", "skills");
 if (existsSync(skillsLink) && lstatSync(skillsLink).isSymbolicLink()) ok(".claude/skills links to .agents/skills");
 else bad(".claude/skills link missing", "bun run setup");
 
-const types = join(root, "worker-configuration.d.ts");
-if (statSync(types).mtimeMs >= statSync(join(root, "wrangler.jsonc")).mtimeMs) ok("worker types are newer than wrangler.jsonc");
-else bad("wrangler.jsonc changed since types were generated", "bun run cf-typegen");
+// File times are meaningless in a fresh checkout, so ask Wrangler. Types include .dev.vars secret names too.
+try {
+	sh("bunx wrangler types --check");
+	ok("worker types match wrangler.jsonc and .dev.vars");
+} catch {
+	bad("worker-configuration.d.ts is out of date with wrangler.jsonc or .dev.vars", "bun run cf-typegen");
+}
 
 try {
 	ok(`git ${sh("git --version").replace("git version ", "")} (git-core end-to-end tests need it)`);
