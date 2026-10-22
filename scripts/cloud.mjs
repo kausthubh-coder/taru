@@ -27,4 +27,7 @@ try {
 	failures.push("setup (run `node scripts/setup.mjs` to see why)");
 }
 
-console.log(failures.length ? `taru cloud session: FAILED ${failures.join(", ")}` : "taru cloud session: ready");
+// stdout is what the session sees, so this one line goes there.
+process.stdout.write(failures.length ? `taru cloud session: FAILED ${failures.join(", ")}
+` : "taru cloud session: ready
+");

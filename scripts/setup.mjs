@@ -97,6 +97,8 @@ if (!port || claimed.has(port)) {
 	let hash = 0;
 	for (const ch of root.toLowerCase()) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
 	port = 5200 + (hash % 700);
+	// Probe one port at a time on purpose: we want the first free one, not all of them.
+	// oxlint-disable-next-line no-await-in-loop
 	while (claimed.has(port) || !(await isFree(port))) port++;
 	writeFileSync(envLocal, envText.replace(/^PORT=.*\n?/m, "") + `PORT=${port}\n`);
 	log(`claimed dev port ${port}`);
@@ -105,9 +107,9 @@ if (!port || claimed.has(port)) {
 // 5. Local database schema. Wrangler takes seconds to start, so skip it when the migrations haven't changed.
 const migrationsDir = join(root, "migrations");
 const migrationsStamp = join(root, ".wrangler", "migrations-applied.txt");
-const migrationsNow = readdirSync(migrationsDir)
+const migrationsNow = (existsSync(migrationsDir) ? readdirSync(migrationsDir) : [])
 	.filter((f) => f.endsWith(".sql"))
-	.sort()
+	.toSorted()
 	.map((f) => `${f} ${statSync(join(migrationsDir, f)).size}`)
 	.join("\n");
 if (!existsSync(migrationsStamp) || readFileSync(migrationsStamp, "utf8") !== migrationsNow) {
