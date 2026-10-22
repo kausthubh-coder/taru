@@ -28,6 +28,4 @@ try {
 }
 
 // stdout is what the session sees, so this one line goes there.
-process.stdout.write(failures.length ? `taru cloud session: FAILED ${failures.join(", ")}
-` : "taru cloud session: ready
-");
+process.stdout.write(failures.length ? `taru cloud session: FAILED ${failures.join(", ")}\n` : "taru cloud session: ready\n");
