@@ -95,3 +95,95 @@ describe("GET /api/repos", () => {
 		expect((await call("/api/repos", { method: "DELETE" })).status).toBe(405);
 	});
 });
+
+describe("POST /api/repos/:owner/:name/import", () => {
+	beforeAll(applyRepoMigrations);
+
+	function importInto(owner: string, name: string, body: unknown, headers: Record<string, string> = { Authorization: adminAuth() }) {
+		return call(`/api/repos/${owner}/${name}/import`, { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
+	}
+
+	it("needs the admin token, a known repo and a usable URL", async () => {
+		await create({ owner: "imp", name: "target" });
+		expect((await importInto("imp", "target", { url: "https://github.com/octo/demo.git" }, {})).status).toBe(401);
+		expect((await importInto("imp", "missing", { url: "https://github.com/octo/demo.git" })).status).toBe(404);
+		expect((await call("/api/repos/imp/target/import")).status).toBe(405);
+
+		const bad = [
+			{ url: "http://github.com/octo/demo.git" },
+			{ url: "ftp://github.com/octo/demo.git" },
+			{ url: "https://x:token@github.com/octo/demo.git" },
+			{ url: "https://github.com/octo/demo.git?x=1" },
+			{ url: "github.com/octo/demo" },
+			{ url: 42 },
+			{},
+		];
+		const responses = await Promise.all(bad.map((body) => importInto("imp", "target", body)));
+		expect(responses.map((r) => r.status)).toEqual(bad.map(() => 400));
+		expect(await responses[0].json()).toEqual({ error: "url must be https:// (http:// is allowed for localhost only)" });
+	});
+
+	it("answers 409 when the repo already has refs", async () => {
+		await create({ owner: "imp", name: "full" });
+		await env.REPO.getByName("imp/full").updateRefs([{ ref: "refs/heads/main", old: null, new: "a".repeat(40) }]);
+		const response = await importInto("imp", "full", { url: "http://127.0.0.1:9/octo/demo.git" });
+		expect(response.status).toBe(409);
+		expect(await response.json()).toEqual({ error: "repo is not empty; import only fills an empty repo" });
+	});
+
+	it("answers 502 with the reason when the remote can't be reached, and leaves the repo empty", async () => {
+		await create({ owner: "imp", name: "unreachable" });
+		const response = await importInto("imp", "unreachable", { url: "http://127.0.0.1:9/octo/demo.git" });
+		expect(response.status).toBe(502);
+		const { error } = await response.json<{ error: string }>();
+		expect(error).toMatch(/^import from http:\/\/127\.0\.0\.1:9\/octo\/demo\.git failed: /);
+		expect(await env.REPO.getByName("imp/unreachable").listRefs()).toEqual(new Map());
+	});
+});
+
+describe("PUT /api/repos/:owner/:name/mirror", () => {
+	beforeAll(applyRepoMigrations);
+
+	function setMirror(owner: string, name: string, body: unknown, headers: Record<string, string> = { Authorization: adminAuth() }) {
+		return call(`/api/repos/${owner}/${name}/mirror`, { method: "PUT", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
+	}
+
+	it("needs the admin token and a usable URL", async () => {
+		await create({ owner: "mir", name: "cfg" });
+		expect((await setMirror("mir", "cfg", { url: "https://github.com/octo/copy.git" }, {})).status).toBe(401);
+		expect((await setMirror("mir", "nope", { url: "https://github.com/octo/copy.git" })).status).toBe(404);
+		expect((await setMirror("mir", "cfg", { url: "http://example.com/copy.git" })).status).toBe(400);
+		expect((await setMirror("mir", "cfg", {})).status).toBe(400);
+		expect((await call("/api/repos/mir/cfg/mirror", { method: "POST" })).status).toBe(405);
+	});
+
+	it("turns the copy on with a fresh status, shows it on GET, and turns it off with null", async () => {
+		await create({ owner: "mir", name: "toggle" });
+		const before = await (await call("/api/repos/mir/toggle")).json<{ mirror: unknown }>();
+		expect(before.mirror).toBeNull();
+
+		const on = await setMirror("mir", "toggle", { url: "https://github.com/octo/copy.git" });
+		expect(on.status).toBe(200);
+		expect(await on.json()).toEqual({
+			mirror: {
+				url: "https://github.com/octo/copy.git",
+				status: {
+					state: "pending",
+					attempts: 0,
+					last_attempt_at: null,
+					last_success_at: null,
+					last_error: null,
+					next_attempt_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+					last_pushed_refs: {},
+				},
+			},
+		});
+		const shown = await (await call("/api/repos/mir/toggle")).json<{ mirror: { url: string; status: { state: string } } }>();
+		expect(shown.mirror.url).toBe("https://github.com/octo/copy.git");
+		expect(shown.mirror.status.state).toBe("pending");
+
+		const off = await setMirror("mir", "toggle", { url: null });
+		expect(await off.json()).toEqual({ mirror: null });
+		expect((await (await call("/api/repos/mir/toggle")).json<{ mirror: unknown }>()).mirror).toBeNull();
+	});
+});

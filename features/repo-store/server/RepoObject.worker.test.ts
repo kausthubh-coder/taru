@@ -1,7 +1,8 @@
-import { runInDurableObject } from "cloudflare:test";
+import { runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import type { StoredObject } from "../../git-core/repo.ts";
+import { MIRROR_RETRY_DELAYS_MS } from "./mirror.logic.ts";
 import { DEFAULT_HEAD, R2_OBJECT_THRESHOLD, r2KeyFor, RepoObject } from "./RepoObject.ts";
 
 // Ids are trusted by the contract, so tests use fake oids: the label's bytes as hex, zero-padded to 40.
@@ -177,5 +178,58 @@ describe("RepoObject as a Repo", () => {
 		expect(await b.hasObjects([commit.oid])).toEqual(new Set());
 		expect(await b.getObject(commit.oid)).toBeUndefined();
 		expect(await b.listRefs()).toEqual(new Map());
+	});
+});
+
+describe("the GitHub copy", () => {
+	it("schedules a push on every ref change and records each failed attempt with backoff", async () => {
+		const repo = env.REPO.getByName("t/mirror");
+		await repo.init();
+		await repo.putObjects([commit]);
+		expect(await repo.mirrorState()).toBeNull();
+
+		// Nothing listens on port 9, so every push fails: that is what the status has to show.
+		const state = await repo.setMirror("http://127.0.0.1:9/octo/copy.git");
+		expect(state?.status.state).toBe("pending");
+		expect(await runDurableObjectAlarm(repo)).toBe(true);
+		let status = (await repo.mirrorState())!.status;
+		expect(status.state).toBe("pending");
+		expect(status.attempts).toBe(1);
+		expect(status.last_error).toMatch(/advertisement failed|fetch failed|connect/i);
+		expect(status.last_success_at).toBeNull();
+		expect(status.last_attempt_at).toMatch(/^\d{4}-/);
+		expect(status.next_attempt_at).toMatch(/^\d{4}-/);
+		expect(Date.parse(status.next_attempt_at!) - Date.parse(status.last_attempt_at!)).toBeGreaterThanOrEqual(4000);
+
+		// A ref change starts the retry count over and brings the push forward.
+		await repo.updateRefs([{ ref: "refs/heads/main", old: null, new: commit.oid }]);
+		status = (await repo.mirrorState())!.status;
+		expect(status.state).toBe("pending");
+		expect(status.attempts).toBe(0);
+		expect(Date.parse(status.next_attempt_at!) - Date.now()).toBeLessThanOrEqual(1000);
+
+		// One failure per retry delay, then one more, and the copy gives up until the next change.
+		for (let i = 0; i < MIRROR_RETRY_DELAYS_MS.length + 1; i++) {
+			// oxlint-disable-next-line no-await-in-loop
+			expect(await runDurableObjectAlarm(repo)).toBe(true);
+		}
+		status = (await repo.mirrorState())!.status;
+		expect(status.state).toBe("failed");
+		expect(status.attempts).toBe(MIRROR_RETRY_DELAYS_MS.length + 1);
+		expect(status.next_attempt_at).toBeNull();
+		expect(await runDurableObjectAlarm(repo)).toBe(false);
+
+		await repo.setMirror(null);
+		expect(await repo.mirrorState()).toBeNull();
+		expect(await runDurableObjectAlarm(repo)).toBe(false);
+	});
+
+	it("does not schedule anything without a mirror, and setHead moves HEAD", async () => {
+		const repo = env.REPO.getByName("t/no-mirror");
+		await repo.init();
+		await repo.updateRefs([{ ref: "refs/heads/dev", old: null, new: commit.oid }]);
+		expect(await runDurableObjectAlarm(repo)).toBe(false);
+		await repo.setHead("refs/heads/dev");
+		expect(await repo.headTarget()).toBe("refs/heads/dev");
 	});
 });
