@@ -28,12 +28,13 @@ const skillsLink = join(root, ".claude", "skills");
 if (existsSync(skillsLink) && lstatSync(skillsLink).isSymbolicLink()) ok(".claude/skills links to .agents/skills");
 else bad(".claude/skills link missing", "bun run setup");
 
-// File times are meaningless in a fresh checkout, so ask Wrangler. Types include .dev.vars secret names too.
+// File times are meaningless in a fresh checkout, so ask Wrangler. Secret names come from the committed
+// .dev.vars.example, not the local .dev.vars: setting an optional secret locally must not change the types.
 try {
-	sh("bunx wrangler types --check");
-	ok("worker types match wrangler.jsonc and .dev.vars");
+	sh("bunx wrangler types --check --env-file .dev.vars.example");
+	ok("worker types match wrangler.jsonc and .dev.vars.example");
 } catch {
-	bad("worker-configuration.d.ts is out of date with wrangler.jsonc or .dev.vars", "bun run cf-typegen");
+	bad("worker-configuration.d.ts is out of date with wrangler.jsonc or .dev.vars.example", "bun run cf-typegen");
 }
 
 try {
