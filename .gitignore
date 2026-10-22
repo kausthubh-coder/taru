@@ -32,3 +32,4 @@ dist-ssr
 
 # agent worktrees
 .claude/worktrees
+/.claude/skills
