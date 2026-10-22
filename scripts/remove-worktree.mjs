@@ -1,8 +1,9 @@
 // Removes a worktree of this repo cleanly. On Windows `git worktree remove` leaves the .claude\skills junction
-// and the folder behind, and refuses while a dev server holds files open.
+// and the folder behind, and refuses while a dev server holds files open. On Linux it deletes the folder under a
+// running dev server, which keeps running orphaned.
 // Usage: bun run remove-worktree <path>      (refuses if the worktree has uncommitted changes)
 import { execSync } from "node:child_process";
-import { existsSync, lstatSync, rmdirSync, unlinkSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync, rmdirSync, unlinkSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const target = process.argv[2] && resolve(process.argv[2]);
@@ -39,6 +40,25 @@ if (process.platform === "win32") {
 			// Already gone.
 		}
 	}
+} else if (existsSync("/proc")) {
+	// Linux: a dev server started as `node node_modules/vite/...` has a relative command line, so match its
+	// working directory too, not only the command line (workerd's has the absolute path).
+	const inside = (path) => path === target || path.startsWith(`${target}/`);
+	for (const entry of readdirSync("/proc")) {
+		const pid = Number(entry);
+		if (!pid || pid === process.pid) continue;
+		try {
+			const cwd = readlinkSync(`/proc/${pid}/cwd`);
+			const cmdline = readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0");
+			if (!inside(cwd) && !cmdline.some(inside)) continue;
+			process.kill(pid, "SIGTERM");
+			console.warn(`stopped process ${pid} (${cmdline.join(" ").trim().slice(0, 80)})`);
+		} catch {
+			// Gone already, or not ours to read.
+		}
+	}
+} else {
+	console.warn("not stopping processes on this platform: stop any dev server running from the worktree yourself");
 }
 
 // Remove the skills link itself, never what it points to.
