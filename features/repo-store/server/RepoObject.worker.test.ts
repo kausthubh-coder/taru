@@ -17,6 +17,14 @@ function blob(label: string, size: number): StoredObject {
 	return { oid: oid(label), type: "blob", data };
 }
 
+// toEqual walks a half-megabyte array element by element with diff bookkeeping, which takes seconds;
+// a plain byte loop gives the same answer instantly.
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+	if (a.byteLength !== b.byteLength) return false;
+	for (let i = 0; i < a.byteLength; i++) if (a[i] !== b[i]) return false;
+	return true;
+}
+
 const commit: StoredObject = { oid: oid("c1"), type: "commit", data: new TextEncoder().encode("tree abc\n\nfirst\n") };
 const tree: StoredObject = { oid: oid("t1"), type: "tree", data: new Uint8Array([1, 2, 3, 4, 5]) };
 
@@ -44,7 +52,7 @@ describe("RepoObject as a Repo", () => {
 
 		const stored = await env.BLOBS.get(r2KeyFor(big.oid));
 		expect(stored).not.toBeNull();
-		expect(new Uint8Array(await stored!.arrayBuffer())).toEqual(big.data);
+		expect(sameBytes(new Uint8Array(await stored!.arrayBuffer()), big.data)).toBe(true);
 		expect(await env.BLOBS.head(r2KeyFor(edge.oid))).toBeNull();
 
 		const rows = await runInDurableObject(repo, (_instance: RepoObject, state) =>
@@ -57,8 +65,12 @@ describe("RepoObject as a Repo", () => {
 			[edge.oid, 0, false],
 		]);
 
-		expect(await repo.getObject(big.oid)).toEqual({ type: "blob", data: big.data });
-		expect(await repo.getObject(edge.oid)).toEqual({ type: "blob", data: edge.data });
+		const readBig = await repo.getObject(big.oid);
+		const readEdge = await repo.getObject(edge.oid);
+		expect(readBig?.type).toBe("blob");
+		expect(sameBytes(readBig!.data, big.data)).toBe(true);
+		expect(readEdge?.type).toBe("blob");
+		expect(sameBytes(readEdge!.data, edge.data)).toBe(true);
 	});
 
 	it("putObjects is idempotent", async () => {
