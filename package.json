@@ -10,11 +10,12 @@
 		"lint": "oxlint --deny-warnings",
 		"test": "vitest run",
 		"check": "bun run lint && bun run typecheck && bun run test && vite build",
-		"setup": "bun scripts/setup.mjs",
-		"doctor": "bun scripts/doctor.mjs",
+		"setup": "node scripts/setup.mjs",
+		"doctor": "node scripts/doctor.mjs",
 		"preview": "bun run build && vite preview",
 		"deploy": "bun run build && wrangler deploy",
-		"cf-typegen": "wrangler types"
+		"cf-typegen": "wrangler types",
+		"remove-worktree": "node scripts/remove-worktree.mjs"
 	},
 	"dependencies": {
 		"pako": "^3.0.2",

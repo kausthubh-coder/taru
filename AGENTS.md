@@ -30,7 +30,7 @@ React with Vite, Vitest. Open source under AGPL-3.0.
 | `features/landing/ui/` | The landing page |
 | `src/` | React entry, thin: renders features |
 | `migrations/` | D1 migrations |
-| `scripts/` | `setup.mjs`, `doctor.mjs` |
+| `scripts/` | `setup.mjs`, `doctor.mjs`, `remove-worktree.mjs`, `cloud.mjs` |
 | `wrangler.jsonc` | Bindings: `REPO`, `BLOBS`, `DB`. Run `bun run cf-typegen` after changing it |
 
 Each feature lives in one folder. Server code goes in `features/<name>/server/`, browser code in
@@ -43,8 +43,9 @@ deadlines), `docs/research/`.
 ## Commands
 
 - Install: `bun install`
-- Setup a fresh worktree: `bun run setup` (installs deps, copies `.dev.vars` from the main checkout, picks a free port into `.env.local`, applies local D1 migrations)
+- Setup a fresh worktree: `bun run setup` (installs deps, copies `.dev.vars` from the main checkout, claims a port into `.env.local`, links skills, applies local D1 migrations, runs the doctor)
 - Doctor: `bun run doctor` (is this checkout healthy? run it first when anything looks off)
+- Remove a worktree: `bun run remove-worktree <path>` (stops its processes, removes the skills junction, then the worktree)
 - Dev: `bun run dev` (port from `.env.local`; ready when Vite prints `Local: http://localhost:<port>/`)
 - Test one file: `bunx vitest run <path>`
 - Typecheck and lint: `bun run typecheck` and `bun run lint`
@@ -104,3 +105,11 @@ When I correct you for the same thing twice, add the rule here and make somethin
 - Stop only processes you started, by the PID you captured. Never kill by name or port.
 - No secrets in code, logs, screenshots or commits. Local secrets live in `.dev.vars` (gitignored).
 - Git: open a PR and wait for CI and my review. Before the GitHub repo exists, commit on a branch and I merge.
+
+## Cloud sessions
+
+Cloud threads (Claude Code on the web, Codex Cloud) run `scripts/cloud.mjs` at session start (`.claude/settings.json`
+hook; Codex: `CLOUD=1 node scripts/cloud.mjs`). It loads my global skills, installs bun if missing, and runs setup.
+- Works there: setup, `bun run check` (including git-core end-to-end tests), `bun run dev` with local bindings.
+- Only on my machine: deploys and anything needing my Cloudflare login.
+- Env vars the cloud environment needs: none yet.

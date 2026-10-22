@@ -1,0 +1,16 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: cp .dev.vars.example .dev.vars
+      # git-core end-to-end tests drive the real git binary; the runner has it.
+      - run: git config --global user.email ci@taru.invalid && git config --global user.name "Taru CI"
+      - run: bun run check
