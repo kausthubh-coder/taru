@@ -27,10 +27,13 @@ React with Vite, Vitest. Open source under AGPL-3.0.
 | `features/repo-store/server/` | `RepoObject` (SQLite + R2 storage implementing `Repo`) and `/api/repos` |
 | `features/git-http/server/` | `/<owner>/<repo>.git/...` endpoints, forwarded to the RepoObject |
 | `features/waitlist/server/` | `/api/waitlist`, stored in D1 |
-| `features/landing/ui/` | The landing page |
+| `features/landing/ui/` | The landing page at `/` (its HTML is `index.html`) |
+| `features/brand/ui/` | The brand kit at `/brand/` (its HTML is `brand/index.html`), and `theme.logic.ts`, which reads colors and sizes out of the theme |
+| `shared/ui/` | `theme.css` (fonts and every design token) and `components.css` (header, buttons, inputs, panes, footer), imported by both pages |
+| `public/brand/` | Logo and icon SVGs. `scripts/brand-assets.mjs` rebuilds the PNG icons, `favicon.ico` and `og.png` from them |
 | `src/` | React entry, thin: renders features |
 | `migrations/` | D1 migrations |
-| `scripts/` | `setup.mjs`, `doctor.mjs`, `remove-worktree.mjs`, `cloud.mjs` |
+| `scripts/` | `setup.mjs`, `doctor.mjs`, `remove-worktree.mjs`, `cloud.mjs`, `brand-assets.mjs` |
 | `wrangler.jsonc` | Bindings: `REPO`, `BLOBS`, `DB`. Run `bun run cf-typegen` after changing it |
 
 Each feature lives in one folder. Server code goes in `features/<name>/server/`, browser code in
@@ -86,12 +89,22 @@ Tests: `*.test.ts` run in Node (pure logic, and git-core end-to-end tests that d
 - Smallest change that solves the real problem.
 - Workers: stream or cap request bodies, never buffer unbounded data; `crypto.getRandomValues` for tokens; no module-level request state; read bindings from `env`/`this.env`, typed from `worker-configuration.d.ts`.
 
+## UI
+
+- UI work: use the `critly` skill, and read `.critly/direction.md` (the look and why) before choosing type, color or spacing.
+- Components use only the role tokens in `shared/ui/theme.css` (`--page`, `--text`, `--accent`, `--space-4`, `--radius-card`...), never raw colors or sizes. `/brand/` shows the color roles and sizes with their jobs.
+- Lime (`--accent`) marks the next action and the commit to follow. Nothing else is lime.
+- Copy says what works today and what's next. A planned feature never gets the present tense.
+- After changing a logo or icon SVG, run `node scripts/brand-assets.mjs` and commit the files it rewrites.
+
 ## Rules and what enforces them
 
 | Rule | Enforced by |
 |---|---|
 | Strict TypeScript, no `any` | `tsconfig.*.json` `strict`, oxlint `no-explicit-any` |
 | git-core has no Cloudflare imports | `features/git-core` is typechecked without DOM; review (nothing automatic yet) |
+| Text and outlines stay readable in light and dark (4.5:1 and 3:1) | `features/brand/ui/theme.logic.test.ts` checks the text and outline pairs in `theme.css` |
+| `/brand/` names only tokens that exist | `features/brand/ui/theme.logic.test.ts` reads `brand/index.html` and checks every role and size it names |
 | No import cycles | oxlint `import/no-cycle` |
 | Lint warnings fail | `oxlint --deny-warnings` |
 | LF line endings | `.gitattributes` |

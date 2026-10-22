@@ -1,15 +1,25 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/brand/taru-logo-dark.svg" />
+  <img src="public/brand/taru-logo.svg" alt="Taru" height="44" />
+</picture>
+
 # Taru
 
 Source control built for coding agents.
 
-Agents read, write and merge code through an API, without cloning. `git clone` and `git push` still work, and
-every push is copied to GitHub, so contributors, stars and CI stay where they are. Private folders inside public
-repos and safe secret sharing are built in.
+Taru is a Git server you run on your own Cloudflare account. `git clone` and `git push` work today. Next, agents
+will read, write and merge code through an API without cloning, and Taru will copy every push to GitHub, so
+contributors, stars and CI stay where they are. Private folders inside public repos and safe secret sharing come
+after that.
 
 Taru runs on Cloudflare (Workers, Durable Objects, R2, D1). You can run your own copy on your Cloudflare
 account: it's free while you try it, and about $5 a month once it's in real use.
 
-> Early. Today: the server skeleton. Next: `git push` and `git clone`, then the agent API.
+> Early. Today: create a repo, `git push` and `git clone` over HTTPS. Being built: import from GitHub, the
+> automatic GitHub copy and the agent API. For now anyone who can reach the server can list and clone every repo,
+> so use it for public code.
+
+Brand, logo files and design tokens: `/brand/` on a running instance, and `shared/ui/theme.css`.
 
 ## Run it locally
 
