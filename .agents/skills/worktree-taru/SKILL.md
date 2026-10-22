@@ -37,7 +37,6 @@ git -C C:\Users\kaust\OneDrive\Documents\dev\taru worktree add -b <branch> C:\sr
 cd C:\src\taru-wt\<name>; bun run setup
 ```
 
-Use `main` instead of `origin/main` until the GitHub remote exists.
 
 ## Cleanup
 

@@ -14,7 +14,7 @@ the `taru-blobs` R2 bucket and the `taru` D1 database. Nothing deploys on push; 
 
 ## 1. Ready
 
-- `git status` is clean; `git fetch origin && git rebase origin/main` (until a remote exists: up to date with local `main`).
+- `git status` is clean; `git fetch origin && git rebase origin/main`.
 - `bun run check` passes.
 - Every changed feature was driven with `verify-taru`, with evidence.
 - List what's going out: `git log origin/main..HEAD --oneline`, and which surfaces it touches.
@@ -36,7 +36,7 @@ gh pr checks --watch          # wait for CI to pass
 gh pr merge --squash          # don't use --delete-branch from inside a worktree
 ```
 
-Before the GitHub repo exists: stop here and tell me; landing means I merge the branch into local `main`.
+The repo is `kausthubh-coder/taru` (private for now; it moves to the `taruhq` org later).
 
 ## 4. Deploy
 

@@ -104,7 +104,7 @@ When I correct you for the same thing twice, add the rule here and make somethin
 - Local dev uses Wrangler's local Durable Objects, R2 and D1 under `.wrangler/`, never production.
 - Stop only processes you started, by the PID you captured. Never kill by name or port.
 - No secrets in code, logs, screenshots or commits. Local secrets live in `.dev.vars` (gitignored).
-- Git: open a PR and wait for CI and my review. Before the GitHub repo exists, commit on a branch and I merge.
+- Git: the repo is `kausthubh-coder/taru`. Open a PR against `main` and wait for CI (`.github/workflows/ci.yml` runs `bun run check`) and my review.
 
 ## Cloud sessions
 
