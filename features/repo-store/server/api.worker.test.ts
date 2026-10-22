@@ -158,15 +158,16 @@ describe("PUT /api/repos/:owner/:name/mirror", () => {
 	});
 
 	it("turns the copy on with a fresh status, shows it on GET, and turns it off with null", async () => {
+		// Turning the copy on pushes right away, so point it at a closed local port, never at real GitHub.
 		await create({ owner: "mir", name: "toggle" });
 		const before = await (await call("/api/repos/mir/toggle")).json<{ mirror: unknown }>();
 		expect(before.mirror).toBeNull();
 
-		const on = await setMirror("mir", "toggle", { url: "https://github.com/octo/copy.git" });
+		const on = await setMirror("mir", "toggle", { url: "https://127.0.0.1:9/octo/copy.git" });
 		expect(on.status).toBe(200);
 		expect(await on.json()).toEqual({
 			mirror: {
-				url: "https://github.com/octo/copy.git",
+				url: "https://127.0.0.1:9/octo/copy.git",
 				status: {
 					state: "pending",
 					attempts: 0,
@@ -179,7 +180,7 @@ describe("PUT /api/repos/:owner/:name/mirror", () => {
 			},
 		});
 		const shown = await (await call("/api/repos/mir/toggle")).json<{ mirror: { url: string; status: { state: string } } }>();
-		expect(shown.mirror.url).toBe("https://github.com/octo/copy.git");
+		expect(shown.mirror.url).toBe("https://127.0.0.1:9/octo/copy.git");
 		expect(shown.mirror.status.state).toBe("pending");
 
 		const off = await setMirror("mir", "toggle", { url: null });

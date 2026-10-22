@@ -57,6 +57,9 @@ export function r2KeyFor(oid: Oid): string {
 }
 
 export class RepoObject extends DurableObject<Env> implements Repo {
+	/** Ref changes this instance has queued for the GitHub copy. alarm() compares it before and after a push. */
+	private mirrorChanges = 0;
+
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
 		// sql.exec is synchronous, so the schema exists before the first request runs; no blockConcurrencyWhile needed.
@@ -237,33 +240,53 @@ export class RepoObject extends DurableObject<Env> implements Repo {
 		const status = this.readMirrorStatus();
 		status.last_attempt_at = new Date().toISOString();
 		status.next_attempt_at = null;
+		const changesBefore = this.mirrorChanges;
+		let failure: string | null = null;
 		try {
 			const result = await pushToRemote(this, url, { headers: authHeadersFor(url, mirrorToken(this.env)), maxPackBytes: MAX_SYNC_PACK_BYTES });
 			const refused = result.results.filter((r) => !r.ok);
 			if (refused.length > 0) {
 				throw new Error(`remote refused ${refused.map((r) => `${r.ref} (${r.ok ? "" : r.reason})`).join(", ")}`);
 			}
+			if (result.commands.length > 0) status.last_pushed_refs = Object.fromEntries(result.commands.map((c) => [c.ref, c.new]));
+		} catch (error) {
+			failure = errorMessage(error);
+		}
+		if (failure === null) {
 			status.state = "ok";
 			status.attempts = 0;
 			status.last_error = null;
 			status.last_success_at = status.last_attempt_at;
-			if (result.commands.length > 0) status.last_pushed_refs = Object.fromEntries(result.commands.map((c) => [c.ref, c.new]));
-			this.writeMirrorStatus(status);
-		} catch (error) {
+		} else {
 			status.attempts += 1;
-			status.last_error = errorMessage(error);
-			const delay = MIRROR_RETRY_DELAYS_MS[status.attempts - 1];
-			if (delay === undefined) {
-				status.state = "failed";
-				this.writeMirrorStatus(status);
-				console.error(JSON.stringify({ message: "mirror push gave up", url, error: status.last_error }));
-				return;
-			}
-			status.state = "pending";
-			status.next_attempt_at = new Date(Date.now() + delay).toISOString();
-			this.writeMirrorStatus(status);
-			await this.ctx.storage.setAlarm(Date.now() + delay);
+			status.last_error = failure;
 		}
+
+		// A ref change during the push already queued the next one (scheduleMirrorPush), which sends everything.
+		// Keep that alarm and say so, instead of reporting "ok" or pushing a retry later than it. getAlarm() can't
+		// tell us: inside alarm() it still returns this alarm's own time.
+		if (this.mirrorChanges !== changesBefore) {
+			status.state = "pending";
+			status.attempts = 0;
+			status.next_attempt_at = new Date((await this.ctx.storage.getAlarm()) ?? Date.now()).toISOString();
+			this.writeMirrorStatus(status);
+			return;
+		}
+		if (failure === null) {
+			this.writeMirrorStatus(status);
+			return;
+		}
+		const delay = MIRROR_RETRY_DELAYS_MS[status.attempts - 1];
+		if (delay === undefined) {
+			status.state = "failed";
+			this.writeMirrorStatus(status);
+			console.error(JSON.stringify({ message: "mirror push gave up", url, error: failure }));
+			return;
+		}
+		status.state = "pending";
+		status.next_attempt_at = new Date(Date.now() + delay).toISOString();
+		this.writeMirrorStatus(status);
+		await this.ctx.storage.setAlarm(Date.now() + delay);
 	}
 
 	private mirrorUrl(): string | null {
@@ -282,6 +305,7 @@ export class RepoObject extends DurableObject<Env> implements Repo {
 
 	/** A change happened: push after `delayMs`, sooner if a push is already due. Each change starts the retry count over. */
 	private async scheduleMirrorPush(delayMs: number): Promise<void> {
+		this.mirrorChanges++;
 		const status = this.readMirrorStatus();
 		status.state = "pending";
 		status.attempts = 0;

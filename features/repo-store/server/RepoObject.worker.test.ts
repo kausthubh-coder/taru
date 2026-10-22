@@ -1,6 +1,6 @@
 import { runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
 import { env } from "cloudflare:workers";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { StoredObject } from "../../git-core/repo.ts";
 import { MIRROR_RETRY_DELAYS_MS } from "./mirror.logic.ts";
 import { DEFAULT_HEAD, R2_OBJECT_THRESHOLD, r2KeyFor, RepoObject } from "./RepoObject.ts";
@@ -191,7 +191,10 @@ describe("the GitHub copy", () => {
 		// Nothing listens on port 9, so every push fails: that is what the status has to show.
 		const state = await repo.setMirror("http://127.0.0.1:9/octo/copy.git");
 		expect(state?.status.state).toBe("pending");
-		expect(await runDurableObjectAlarm(repo)).toBe(true);
+		// setMirror schedules the first push for now, so workerd may already be running it on its own. Run it if it's
+		// still due, then wait for that one attempt to be recorded either way.
+		await runDurableObjectAlarm(repo);
+		await vi.waitFor(async () => expect((await repo.mirrorState())!.status.attempts).toBe(1));
 		let status = (await repo.mirrorState())!.status;
 		expect(status.state).toBe("pending");
 		expect(status.attempts).toBe(1);
