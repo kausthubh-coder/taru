@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Git keeps the history; GitHub sells everything around it</title>
+<style>
+/* Tokens. Neutrals do the work; the accent marks links and the current thing;
+   green, amber and red appear only when they mean pass, warning or failure. */
+:root {
+  color-scheme: light dark;
+  --bg: #fcfcfb;      --surface: #f2f2f0;   --line: #dcdcd8;
+  --text: #1b1b1a;    --text-2: #4a4a47;    --text-3: #67675f;
+  --accent: #2a5db0;  --accent-bg: #e8eefa;
+  --ok: #23703a;      --ok-bg: #e6f2e9;
+  --warn: #8a5a00;    --warn-bg: #fbf0d9;
+  --bad: #b3261e;     --bad-bg: #fbe7e5;
+  --code-bg: #f2f2f0;
+
+  --fs-caption: 0.875rem; --fs-body: 1.0625rem; --fs-sub: 1.3125rem; --fs-title: 1.625rem; --fs-display: 2.0625rem;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 72px;
+
+  --measure: 39rem;
+  --wide: 1080px;
+  --radius: 8px;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161616;      --surface: #212120;   --line: #353533;
+    --text: #ececea;    --text-2: #bcbcb6;    --text-3: #9b9b94;
+    --accent: #8fb3f5;  --accent-bg: #1d2a42;
+    --ok: #7fcf94;      --ok-bg: #18301f;
+    --warn: #e6b85c;    --warn-bg: #352a12;
+    --bad: #f2928b;     --bad-bg: #3b1d1a;
+    --code-bg: #212120;
+  }
+}
+
+* { box-sizing: border-box; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; padding: var(--s7) var(--s5) var(--s8);
+  font: 400 var(--fs-body)/1.6 var(--sans); color: var(--text);
+}
+main > * { max-width: var(--measure); margin-inline: auto; }
+main > .wide { max-width: var(--wide); }
+
+h1, h2, h3 { line-height: 1.25; text-wrap: balance; margin-block: 0; }
+h1 { font-size: var(--fs-display); font-weight: 650; letter-spacing: -0.02em; }
+h2 { font-size: var(--fs-title); font-weight: 650; letter-spacing: -0.015em; margin-top: var(--s8); }
+h3 { font-size: var(--fs-sub); font-weight: 600; letter-spacing: -0.01em; margin-top: var(--s6); }
+h2 + *, h3 + * { margin-top: var(--s3); }
+p, ul, ol, table, pre, figure, details, .callout, .steps, .flow, dl, .layers { margin-block: var(--s4) 0; }
+p { text-wrap: pretty; }
+li + li { margin-top: var(--s2); }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+strong { font-weight: 600; }
+.muted { color: var(--text-3); }
+small, .caption { font-size: var(--fs-caption); color: var(--text-3); }
+.num { font-variant-numeric: tabular-nums; }
+figure { margin-inline: auto; }
+
+.meta { font-size: var(--fs-caption); color: var(--text-3); display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); align-items: center; margin-bottom: var(--s3); }
+.lede { font-size: var(--fs-sub); line-height: 1.5; color: var(--text-2); margin-top: var(--s4); }
+.tldr { background: var(--surface); border-radius: var(--radius); padding: var(--s5); margin-top: var(--s6); }
+.tldr > :first-child { margin-top: 0; }
+.tldr ul { padding-left: 1.2em; }
+
+nav.toc { font-size: var(--fs-caption); margin-top: var(--s6); }
+nav.toc ol { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); list-style: none; padding: 0; margin: 0; }
+nav.toc li + li { margin-top: 0; }
+
+.tag { display: inline-block; font-size: var(--fs-caption); font-weight: 600; line-height: 1; padding: 5px 8px; border-radius: 999px; background: var(--surface); color: var(--text-2); white-space: nowrap; }
+.tag.ok { background: var(--ok-bg); color: var(--ok); }
+.tag.warn { background: var(--warn-bg); color: var(--warn); }
+.tag.bad { background: var(--bad-bg); color: var(--bad); }
+.tag.info { background: var(--accent-bg); color: var(--accent); }
+
+.callout { border-left: 3px solid var(--line); padding: var(--s1) 0 var(--s1) var(--s4); }
+.callout > :first-child { margin-top: 0; }
+.callout.ask { border-color: var(--accent); }
+.callout.risk { border-color: var(--warn); }
+.callout.bad { border-color: var(--bad); }
+.label { display: block; font-size: var(--fs-caption); font-weight: 600; color: var(--text-2); margin-bottom: var(--s1); }
+
+.steps { list-style: none; padding: 0; counter-reset: step; }
+.steps > li { counter-increment: step; position: relative; padding-left: 2.5em; }
+.steps > li + li { margin-top: var(--s4); }
+.steps > li::before { content: counter(step); position: absolute; left: 0; top: 0.1em; width: 1.7em; height: 1.7em; border-radius: 50%; background: var(--surface); color: var(--text-2); font-size: var(--fs-caption); font-weight: 600; display: grid; place-items: center; }
+.steps > li.hl::before { background: var(--accent-bg); color: var(--accent); }
+
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--s2); }
+.flow .node { flex: 1 1 140px; background: var(--surface); border-radius: var(--radius); padding: var(--s3) var(--s4); }
+.flow .node b { display: block; font-weight: 600; }
+.flow .node span { font-size: var(--fs-caption); color: var(--text-3); }
+.flow .node.hl { background: var(--accent-bg); }
+.flow .arrow { align-self: center; color: var(--text-3); }
+@media (max-width: 560px) { .flow { flex-direction: column; } .flow .node { flex: none; } .flow .arrow { transform: rotate(90deg); align-self: flex-start; margin-left: var(--s4); } }
+
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: var(--s5); margin-top: var(--s4); }
+.pair > * { margin: 0; min-width: 0; }
+.pair ul { padding-left: 1.2em; margin-top: var(--s2); }
+
+/* Layer stack: the forge sits on top of Git. */
+.layers { display: grid; gap: var(--s2); }
+.layers > div { background: var(--surface); border-radius: var(--radius); padding: var(--s3) var(--s4); display: grid; grid-template-columns: minmax(8rem, 12rem) 1fr; gap: var(--s1) var(--s4); }
+.layers > div.hl { background: var(--accent-bg); }
+.layers b { font-weight: 600; }
+.layers span { font-size: var(--fs-caption); color: var(--text-2); }
+@media (max-width: 560px) { .layers > div { grid-template-columns: 1fr; } }
+
+.graph { overflow-x: auto; }
+.graph svg { min-width: 460px; }
+dl.terms dt { font-weight: 600; }
+dl.terms dd { margin: var(--s1) 0 var(--s4); color: var(--text-2); }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: var(--fs-caption); line-height: 1.5; }
+th, td { text-align: left; vertical-align: top; padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--text-2); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.pick td { background: var(--accent-bg); }
+
+code { font-family: var(--mono); font-size: 0.9em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--code-bg); border-radius: var(--radius); padding: var(--s4); overflow-x: auto; font-size: var(--fs-caption); line-height: 1.55; }
+pre code { background: none; padding: 0; overflow-wrap: normal; }
+figcaption { font-size: var(--fs-caption); color: var(--text-3); margin-top: var(--s2); }
+
+details { border-top: 1px solid var(--line); padding-top: var(--s3); }
+details + details { margin-top: 0; }
+details > :not(summary) { margin-top: var(--s3); }
+details:last-of-type { border-bottom: 1px solid var(--line); padding-bottom: var(--s3); }
+summary { cursor: pointer; font-weight: 600; }
+summary small { font-weight: 400; margin-left: var(--s2); }
+
+.check summary { font-weight: 500; }
+.check summary::before { content: "Check: "; color: var(--text-3); font-weight: 600; }
+
+footer { margin-top: var(--s8); font-size: var(--fs-caption); color: var(--text-3); }
+footer > * { max-width: var(--measure); margin-inline: auto; }
+
+@media (max-width: 560px) { body { padding: var(--s6) var(--s4) var(--s7); } h2 { margin-top: var(--s7); } }
+@media print {
+  :root { color-scheme: light; }
+  body { padding: 0; } nav.toc { display: none; }
+  details { border: 0; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; color: var(--text-3); }
+  h2, h3 { break-after: avoid; } figure, table, .flow, .pair, .layers { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <div class="meta"><span>GitHub alternative research</span><span>October 12, 2026</span><span class="tag info">Explainer</span></div>
+  <h1>Git keeps the history; GitHub sells everything around it, and that's where both the lock-in and the complaints are</h1>
+  <p class="lede">Before building a GitHub alternative, you need to know what each part does, how GitHub makes money, who uses it, and which problems actually make people pay or leave.</p>
+</header>
+
+<section class="tldr" aria-label="Summary">
+  <ul>
+    <li><strong>Git</strong> is free software on your machine. It stores snapshots of your code and labels pointing at them. It has no accounts, reviews, issues or CI.</li>
+    <li><strong>GitHub</strong> is a website (a "forge") that hosts Git repos and adds everything Git leaves out: who can push, pull requests, review, issues, CI (Actions), and a public profile. Most of what you'd call "GitHub" isn't Git.</li>
+    <li><strong>Lock-in</strong> lives in the forge layer. <code>git clone</code> copies the code in seconds, but PRs, reviews, issues, CI setups, integrations and the contributor community don't come with it.</li>
+    <li><strong>Money</strong> comes from companies: per-seat plans, Copilot, CI minutes. Individuals and open source are the free funnel. 90% of the Fortune 500 use GitHub.</li>
+    <li><strong>The 2026 pain</strong> comes from AI agents. They write far more code, which overloads GitHub's servers (outages) and human reviewers (review queues, AI-generated junk PRs). The loudest complainers are open-source maintainers who don't pay. The teams that do pay stay on GitHub and buy tools on top.</li>
+  </ul>
+</section>
+
+<nav class="toc" aria-label="Contents"><ol>
+  <li><a href="#terms">Terms</a></li>
+  <li><a href="#git">How Git works</a></li>
+  <li><a href="#github">What GitHub adds</a></li>
+  <li><a href="#loop">A change, end to end</a></li>
+  <li><a href="#won">Why it won</a></li>
+  <li><a href="#money">How it makes money</a></li>
+  <li><a href="#users">Who uses it</a></li>
+  <li><a href="#problems">The problems</a></li>
+  <li><a href="#leaving">Who leaves</a></li>
+  <li><a href="#alts">Alternatives</a></li>
+  <li><a href="#mistake">The common mistake</a></li>
+  <li><a href="#you">What this means for you</a></li>
+</ol></nav>
+
+<h2 id="terms">Ten words the rest of the page depends on</h2>
+<dl class="terms">
+  <dt>Commit</dt>
+  <dd>A saved snapshot of every file in the project, plus a pointer to the commit before it, the author and a message. It's named by a hash such as <code>a1f9c03</code>, computed from its contents. Change anything, including its parent, and the hash changes.</dd>
+  <dt>Branch</dt>
+  <dd>A movable label pointing at one commit, nothing more. Making a branch writes a 41-byte file, which is why branches are cheap in Git.</dd>
+  <dt>Repository (repo)</dt>
+  <dd>The folder of commits and labels. Every clone holds the full history, so your laptop has as much as the server does.</dd>
+  <dt>Remote</dt>
+  <dd>Another copy of the repo you push to and pull from, usually on GitHub. Calling it "the server" is just a convention; to Git it's another copy.</dd>
+  <dt>Forge</dt>
+  <dd>A website that hosts repos and adds collaboration: GitHub, GitLab, Bitbucket, Codeberg, Forgejo.</dd>
+  <dt>Pull request (PR)</dt>
+  <dd>A forge feature, not a Git one: "please merge my branch into main." It's the page where people discuss, review and approve a change.</dd>
+  <dt>CI (continuous integration)</dt>
+  <dd>Machines that build and test every change automatically. GitHub's CI is called <strong>Actions</strong> and is configured in YAML files.</dd>
+  <dt>Merge queue</dt>
+  <dd>A line of approved PRs. The forge tests them together before merging, so two PRs that each pass alone can't break main together.</dd>
+  <dt>Stacked PRs</dt>
+  <dd>One big change split into a chain of small PRs, each building on the last, reviewed one at a time. GitHub shipped them on every plan on October 6, 2026.</dd>
+  <dt>Agent</dt>
+  <dd>An AI coding tool (Claude Code, Codex, Copilot, Cursor) that writes code and opens PRs itself. Microsoft said in July 2026 that 1 in 3 PRs on GitHub involves one.</dd>
+</dl>
+
+<h2 id="git">Git is a chain of snapshots plus movable labels</h2>
+<p>Linus Torvalds wrote Git in 2005 for Linux kernel development. Every operation you use daily (commit, branch, log, diff, merge) runs on your machine with no network. Pushing and pulling just copy missing commits between two repos.</p>
+
+<p>Here is a real-shaped example. You branch off at commit B to build a feature. Meanwhile someone adds commit C to main. Your branch has D and E.</p>
+
+<div class="pair wide">
+<figure class="graph" style="margin:0">
+  <span class="label">Before: two lines of work</span>
+  <svg viewBox="0 0 500 180" role="img" aria-labelledby="g1t" style="width:100%;height:auto;max-width:500px">
+    <title id="g1t">Main has commits A, B, C. The feature branch splits off at B and has D and E. The main label points at C, the feature label at E.</title>
+    <g font-family="inherit" fill="currentColor">
+      <line x1="40" y1="70" x2="220" y2="70" stroke="var(--text-3)" stroke-width="2"/>
+      <line x1="130" y1="70" x2="220" y2="140" stroke="var(--text-3)" stroke-width="2"/>
+      <line x1="220" y1="140" x2="310" y2="140" stroke="var(--text-3)" stroke-width="2"/>
+      <circle cx="40" cy="70" r="20" fill="var(--surface)" stroke="var(--line)"/>
+      <circle cx="130" cy="70" r="20" fill="var(--surface)" stroke="var(--line)"/>
+      <circle cx="220" cy="70" r="20" fill="var(--surface)" stroke="var(--line)"/>
+      <circle cx="220" cy="140" r="20" fill="var(--surface)" stroke="var(--line)"/>
+      <circle cx="310" cy="140" r="20" fill="var(--surface)" stroke="var(--line)"/>
+      <g font-size="15" font-weight="600" text-anchor="middle">
+        <text x="40" y="75">A</text><text x="130" y="75">B</text><text x="220" y="75">C</text>
+        <text x="220" y="145">D</text><text x="310" y="145">E</text>
+      </g>
+      <g font-size="14" text-anchor="middle" fill="var(--text-3)" font-family="ui-monospace, Consolas, monospace">
+        <text x="40" y="38">a1f</text><text x="130" y="38">b72</text><text x="220" y="38">c03</text>
+        <text x="220" y="178">d4e</text><text x="310" y="178">e9b</text>
+      </g>
+      <rect x="252" y="58" width="60" height="24" rx="12" fill="var(--surface)" stroke="var(--line)"/>
+      <text x="282" y="75" font-size="14" text-anchor="middle">main</text>
+      <rect x="342" y="128" width="148" height="24" rx="12" fill="var(--accent-bg)"/>
+      <text x="416" y="145" font-size="14" text-anchor="middle" fill="var(--accent)">feature (HEAD)</text>
+    </g>
+  </svg>
+</figure>
+<figure class="graph" style="margin:0">
+  <span class="label">After <code>git rebase main</code>: your commits are copied</span>
+  <svg viewBox="0 0 500 180" role="img" aria-labelledby="g2t" style="width:100%;height:auto;max-width:500px">
+    <title id="g2t">After rebase, main is A, B, C and then new copies D-prime and E-prime with new hashes. The old D and E are left unlabeled.</title>
+    <g font-family="inherit" fill="currentColor">
+      <line x1="40" y1="70" x2="400" y2="70" stroke="var(--text-3)" stroke-width="2"/>
+      <g opacity="0.45">
+        <line x1="130" y1="70" x2="220" y2="140" stroke="var(--text-3)" stroke-width="2" stroke-dasharray="5 5"/>
+        <line x1="220" y1="140" x2="310" y2="140" stroke="var(--text-3)" stroke-width="2" stroke-dasharray="5 5"/>
+        <circle cx="220" cy="140" r="20" fill="var(--surface)" stroke="var(--line)"/>
+        <circle cx="310" cy="140" r="20" fill="var(--surface)" stroke="var(--line)"/>
+        <text x="220" y="145" font-size="15" text-anchor="middle">D</text>
+        <text x="310" y="145" font-size="15" text-anchor="middle">E</text>
+      </g>
+      <text x="345" y="145" font-size="12" fill="var(--text-3)">old copies, no label</text>
+      <circle cx="40" cy="70" r="20" fill="var(--surface)" stroke="var(--line)"/>
+      <circle cx="130" cy="70" r="20" fill="var(--surface)" stroke="var(--line)"/>
+      <circle cx="220" cy="70" r="20" fill="var(--surface)" stroke="var(--line)"/>
+      <circle cx="310" cy="70" r="20" fill="var(--accent-bg)" stroke="var(--accent)"/>
+      <circle cx="400" cy="70" r="20" fill="var(--accent-bg)" stroke="var(--accent)"/>
+      <g font-size="15" font-weight="600" text-anchor="middle">
+        <text x="40" y="75">A</text><text x="130" y="75">B</text><text x="220" y="75">C</text>
+        <text x="310" y="75" fill="var(--accent)">D′</text><text x="400" y="75" fill="var(--accent)">E′</text>
+      </g>
+      <g font-size="14" text-anchor="middle" fill="var(--text-3)" font-family="ui-monospace, Consolas, monospace">
+        <text x="40" y="108">a1f</text><text x="130" y="108">b72</text><text x="220" y="108">c03</text>
+        <text x="310" y="108" fill="var(--accent)">7f1 new</text><text x="400" y="108" fill="var(--accent)">2ac new</text>
+      </g>
+      <rect x="190" y="10" width="60" height="24" rx="12" fill="var(--surface)" stroke="var(--line)"/>
+      <text x="220" y="27" font-size="14" text-anchor="middle">main</text>
+      <rect x="326" y="10" width="148" height="24" rx="12" fill="var(--accent-bg)"/>
+      <text x="400" y="27" font-size="14" text-anchor="middle" fill="var(--accent)">feature (HEAD)</text>
+    </g>
+  </svg>
+</figure>
+</div>
+<p class="caption">Rebase replays D and E on top of C. Because a commit's hash covers its parent, the copies get new hashes. The label moves; the old commits are just left behind.</p>
+
+<p>That one behavior explains a lot of the pain later on. <strong>Review tools attach comments to commit hashes</strong>, so every rebase or amend makes them look like brand-new commits. Gerrit (used by Google's Android team) adds a fixed "Change-Id" to each commit. Jujutsu (jj) gives every change a stable ID that survives rewrites. GitHub reviews a whole branch's diff instead, which is why long-running PRs get messy.</p>
+
+<h3>What Git deliberately doesn't do</h3>
+<p>Git only answers "what did the code look like, and how did it get here?" It has no idea who you are. These all come from the forge:</p>
+<ul>
+  <li><strong>Accounts and permissions:</strong> who may push, who may approve.</li>
+  <li><strong>Review:</strong> comments, approvals, "request changes".</li>
+  <li><strong>Issues and planning:</strong> bug reports, roadmaps, projects.</li>
+  <li><strong>CI:</strong> running tests on every push.</li>
+  <li><strong>Discovery:</strong> search, stars, profiles, forks.</li>
+</ul>
+
+<h3>Jujutsu (jj) is a different front end on the same storage</h3>
+<p>jj stores data in Git format and pushes to normal Git remotes, including GitHub. What changes is how you work. Your working folder is always a commit, so nothing needs staging. Changes have stable IDs. A conflicting rebase still succeeds and records the conflict to fix later. Editing a commit automatically rebases everything after it. There's a full undo log. It has about 32,000 GitHub stars, and its creator joined the funded startup ERSC as CTO in September 2026. Because it works with GitHub, it fixes Git's usability without moving you off GitHub.</p>
+
+<details class="check"><summary>GitHub is down for three hours. Can you still commit, branch and read history?</summary><p>Yes. Those are all local Git operations. What you lose is the forge: you can't open or merge PRs, get reviews, or run Actions. That's why outages hurt teams so much: <strong>Git is fine, but shipping goes through the forge</strong>.</p></details>
+<details class="check"><summary>A reviewer commented on commit d4e. You rebase and force-push. What happens to the comment?</summary><p>d4e is no longer on the branch; it's been replaced by 7f1. The comment gets marked "outdated" or ends up pointing at nothing. That's the reason stable change IDs (jj, Gerrit) exist and why GitHub's stacks had to keep approvals working through rebases.</p></details>
+
+<h2 id="github">GitHub is the layer on top of Git: people, review, CI and identity</h2>
+<p>Read this stack from the bottom up. Only the bottom row is Git. Everything above it is GitHub, and none of it travels with <code>git clone</code>.</p>
+
+<div class="layers wide" role="img" aria-label="Layer stack: Git storage at the bottom; above it hosting, collaboration, automation, social and AI layers added by GitHub">
+  <div class="hl"><b>AI (newest, main growth)</b><span>Copilot in the editor, Copilot code review, the Copilot coding agent that turns an issue into a PR, and outside agents (Codex, Claude) you can assign work to.</span></div>
+  <div><b>Social and identity</b><span>Profiles and contribution graphs work as a developer's résumé. Also stars, forks, trending, Sponsors, and "Sign in with GitHub" across thousands of dev tools.</span></div>
+  <div><b>Automation</b><span>Actions (CI/CD), Packages (container and library hosting), Codespaces (cloud dev machines), Dependabot, Marketplace, webhooks and Apps.</span></div>
+  <div><b>Collaboration</b><span>Pull requests, line-by-line review, issues, Projects, notifications, releases, CODEOWNERS, rulesets, merge queue, stacked PRs.</span></div>
+  <div><b>Hosting and access</b><span>Accounts, orgs and teams, permissions, SSO and audit logs (Enterprise), the web file browser.</span></div>
+  <div><b>Git storage</b><span>Commits, trees, branches and tags, served over SSH/HTTPS. The only portable part.</span></div>
+</div>
+
+<h3>Which features matter to which users</h3>
+<div class="table-wrap wide"><table>
+  <thead><tr><th>Feature</th><th>What it does</th><th>Who lives in it</th><th>Plan</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Pull requests and review</strong></td><td>Propose, discuss, approve and merge changes</td><td>Everyone, every day. Where the review queue builds up</td><td>Free; multiple reviewers and required approvals on Team</td></tr>
+    <tr><td><strong>Actions</strong></td><td>Run tests and deploys on every push</td><td>Every team. Platform engineers spend the most time fighting it</td><td>2,000 free minutes; 3,000 Team; 50,000 Enterprise</td></tr>
+    <tr><td><strong>Issues and Projects</strong></td><td>Bug tracking and planning boards</td><td>Open-source maintainers, team leads, PMs</td><td>Free</td></tr>
+    <tr><td><strong>Rulesets, CODEOWNERS, merge queue</strong></td><td>Required checks, who must approve which folders, safe merging</td><td>Busy teams and enterprise admins</td><td>Team/Enterprise for private repos</td></tr>
+    <tr><td><strong>Profiles, stars, Sponsors</strong></td><td>Reputation, discovery, donations</td><td>Individuals and open source</td><td>Free</td></tr>
+    <tr><td><strong>SSO, audit log, data residency</strong></td><td>Company control and compliance</td><td>Security and IT at large companies</td><td>Enterprise</td></tr>
+    <tr><td><strong>Copilot</strong></td><td>AI completion, chat, review and coding agent</td><td>Individuals and companies</td><td>Separate subscription, usage-based since June 2026</td></tr>
+  </tbody>
+</table></div>
+<p class="caption">Prices from github.com/pricing as of October 2026. GitHub doesn't publish per-feature usage; "who lives in it" is my judgement, not data.</p>
+
+<h2 id="loop">One change, end to end: the loop every team runs, with agents now at both ends</h2>
+<p>Here's what happens when a teammate, or an agent, fixes a bug at a typical company on GitHub. Highlighted steps are where the work has piled up since agents arrived.</p>
+<ol class="steps">
+  <li><strong>Branch:</strong> create <code>fix-login</code> from main. Outside contributors without write access fork the repo first.</li>
+  <li><strong>Commit:</strong> edit and save snapshots locally. An agent may run several of these in parallel, each in its own <em>worktree</em> (an extra checkout of the same repo). Theo calls worktrees "an abomination" for this.</li>
+  <li><strong>Push:</strong> send the commits to GitHub.</li>
+  <li class="hl"><strong>Open a PR:</strong> describe the change and request reviewers. CODEOWNERS adds required reviewers automatically. <em>Agents now open PRs on their own: the Copilot agent alone opened over 1M between May and September 2025.</em></li>
+  <li class="hl"><strong>Checks run:</strong> Actions builds and tests. A failure means push a fix and wait again. This "push and wait" loop is the most complained-about part of GitHub.</li>
+  <li class="hl"><strong>Review:</strong> a human reads the diff, comments, approves or asks for changes. Feedback to an agent is usually relayed by hand: a person copies the comment back into the agent's session. <em>This is the new bottleneck.</em></li>
+  <li><strong>Merge queue:</strong> approved PRs are tested together against the latest main, then merged.</li>
+  <li><strong>Deploy:</strong> usually another Actions workflow ships it.</li>
+</ol>
+<p>Steps 1-3 are Git. Steps 4-8 are GitHub. In one 2025 study of 10,000+ developers (Faros AI, via secondary summaries), teams that used AI heavily merged 98% more PRs, but <strong>PR review time rose 91%</strong> and average PR size rose 154%, with no measurable improvement in company-level delivery. Writing code got cheap; steps 4-6 didn't.</p>
+
+<details class="check"><summary>An agent opens 30 PRs overnight. Which step does a two-person team get stuck on?</summary><p>Review (step 6), and to a lesser degree CI (step 5). Writing and pushing cost almost nothing now. Humans still have to decide which PR to look at first, read it, and relay feedback. That's why "faster code generation" isn't the opening for a new product, but the review queue is.</p></details>
+
+<h2 id="won">GitHub won on timing and taste, and people stay because of everything that isn't code</h2>
+<h3>How it won</h3>
+<p>In 2005 most projects used SVN, where one central server held the history and contributing meant emailing patch files. Git and Mercurial both arrived that year and made branching cheap. GitHub launched in 2008 with two things competitors lacked. One was a <strong>user-centric design</strong>: projects live under people's names, and anyone can fork and send a pull request. The other was taste: it wasn't ugly. The Ruby on Rails community adopted it early. By December 2008 GitHub had about 27,000 public repos to Bitbucket's 1,000. Google Code shut down in 2015 and pointed people to GitHub. Bitbucket dropped Mercurial in 2020 because fewer than 1% of new users picked it.</p>
+
+<div class="table-wrap wide"><table>
+  <thead><tr><th>When</th><th>What happened</th><th>Why it matters now</th></tr></thead>
+  <tbody>
+    <tr><td class="n">2005</td><td>Git created for the Linux kernel</td><td>The storage everyone still uses</td></tr>
+    <tr><td class="n">2008</td><td>GitHub launches as "social coding"</td><td>The pull request replaces emailing patches</td></tr>
+    <tr><td class="n">2018</td><td>Microsoft buys GitHub for $7.5B in stock (28M developers)</td><td>Start of the trust question</td></tr>
+    <tr><td class="n">2019</td><td>Free private repos; Actions launches</td><td>Free CI becomes a big reason to stay</td></tr>
+    <tr><td class="n">2021</td><td>Copilot preview</td><td>By 2024 Copilot alone is bigger than all of GitHub was in 2018</td></tr>
+    <tr><td class="n">Aug 2025</td><td>CEO leaves; GitHub folded into Microsoft CoreAI with no new CEO</td><td>Most-cited root cause of mistrust</td></tr>
+    <tr><td class="n">Oct 2025</td><td>Move to Azure begins; most feature work paused</td><td>Outages during the move</td></tr>
+    <tr><td class="n">Dec 2025 on</td><td>Agent traffic surges: commits went from 1B for all of 2025 to 1.4B a month</td><td>GitHub now plans for 30x its old scale</td></tr>
+    <tr><td class="n">Apr 2026</td><td>Merge-queue bug silently reverted code in 658 repos; Ghostty announces it's leaving</td><td>Reliability becomes the top complaint</td></tr>
+    <tr><td class="n">Jun 2026</td><td>Copilot moves to usage-based billing</td><td>Copilot revenue up 60%+ in a quarter</td></tr>
+    <tr><td class="n">Aug 2026</td><td>7h47m global outage; Cursor launches Origin hosting the same day</td><td>Competitors time launches to outages</td></tr>
+    <tr><td class="n">Oct 6, 2026</td><td>Stacked PRs ship on every plan</td><td>Stacks stop setting other tools apart</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Why people stay: what does and doesn't come with you</h3>
+<div class="pair wide">
+  <div class="callout"><span class="label">Comes with <code>git clone</code></span>
+    <ul><li>Every file and every commit</li><li>Branches and tags</li><li>Commit messages and authors</li></ul>
+    <p class="caption">Moving this takes minutes.</p>
+  </div>
+  <div class="callout risk"><span class="label">Stays on GitHub</span>
+    <ul>
+      <li><strong>PRs and reviews:</strong> years of discussion about why code is the way it is</li>
+      <li><strong>Issues</strong> and the links between them</li>
+      <li><strong>Actions workflows</strong> and Marketplace actions</li>
+      <li><strong>Integrations:</strong> Slack, Linear, Vercel, deploy hooks, GitHub Apps</li>
+      <li><strong>Rules:</strong> branch protection, CODEOWNERS, SSO and permission setups</li>
+      <li><strong>People:</strong> contributors' accounts, stars, followers, Sponsors money</li>
+    </ul>
+  </div>
+</div>
+<p>The deepest moat is the bottom bullet. "There are plenty of places to host a Git repository, but remarkably few places to host an open-source community," as one widely shared post put it. Contributors already have GitHub accounts, dependencies live there, and every agent defaults to GitHub's APIs. Leaving means asking everyone to follow you.</p>
+
+<details class="check"><summary>A team mirrors its repo to Forgejo in an afternoon. Why might it still be on GitHub a year later?</summary><p>The mirror moved the cheap part. CI pipelines need rewriting, PR history and issue links stay behind, integrations need reconnecting, and outside contributors have to make new accounts. Ghostty is the live example: it announced it was leaving in April 2026 and is still developed on GitHub every day in October.</p></details>
+
+<h2 id="money">Companies pay; individuals and open source are the free funnel</h2>
+<div class="flow wide" role="img" aria-label="Developers learn on free GitHub, bring it to work, the company buys seats, then pays more for Copilot, CI minutes and security">
+  <div class="node"><b>Free users</b><span>Students, hobbyists and open source learn on GitHub</span></div><div class="arrow" aria-hidden="true">→</div>
+  <div class="node"><b>Habit</b><span>Their profile and muscle memory come to work with them</span></div><div class="arrow" aria-hidden="true">→</div>
+  <div class="node"><b>Company seats</b><span>Team $4 or Enterprise $21 per user/month</span></div><div class="arrow" aria-hidden="true">→</div>
+  <div class="node hl"><b>Usage on top</b><span>Copilot, Actions minutes, Codespaces, Advanced Security</span></div>
+</div>
+
+<div class="table-wrap wide"><table>
+  <thead><tr><th>Number</th><th class="n">Value</th><th>Source and date</th></tr></thead>
+  <tbody>
+    <tr><td>Developers on GitHub</td><td class="n">180M+</td><td>Octoverse, Oct 2025 (Microsoft said "225M users" in Jul 2026; measured differently)</td></tr>
+    <tr><td>Repositories</td><td class="n">630M</td><td>Octoverse, Oct 2025</td></tr>
+    <tr><td>PRs merged in 2025</td><td class="n">518.7M (+29%)</td><td>Octoverse</td></tr>
+    <tr><td>Fortune 500 using it</td><td class="n">90%+</td><td>Nadella, Jul 2026</td></tr>
+    <tr><td>Last official revenue</td><td class="n">$2B a year</td><td>Run rate, Jul 2024; not broken out since</td></tr>
+    <tr><td>Copilot paid subscribers</td><td class="n">4.7M (+75%)</td><td>Microsoft, Jan 2026</td></tr>
+    <tr><td>Developers using Git / GitHub / GitLab</td><td class="n">94% / 81% / 36%</td><td>Stack Overflow survey 2025, via search summary</td></tr>
+    <tr><td>GitLab revenue (closest public rival)</td><td class="n">$955M (+26%)</td><td>GitLab 10-K, year ended Jan 2026</td></tr>
+  </tbody>
+</table></div>
+<p>Two things follow. First, the base forge is cheap ($4 a seat) and the free tier is generous, so <strong>nobody beats GitHub on price</strong>. Second, the money has moved to the layers on top. A 10-person team pays GitHub about $40 a month for Team, then often $150-400 a month for AI review. CodeRabbit, an AI reviewer that runs on top of GitHub, reportedly went from about $5M to $40M a year in revenue in twelve months (aggregator figure).</p>
+
+<h2 id="users">Users split into people who complain loudly and people who pay</h2>
+<div class="table-wrap wide"><table>
+  <thead><tr><th>Who</th><th>What they do on GitHub</th><th>What hurts in 2026</th><th>Do they pay?</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Solo and indie devs</strong></td><td>Host side projects, run agents on them</td><td>Reviewing their own agents' PRs; juggling parallel branches</td><td>Rarely; $10-20 for clear time savings</td></tr>
+    <tr><td><strong>Students</strong></td><td>Learn, build portfolios</td><td>Little</td><td>No (free education plan)</td></tr>
+    <tr><td><strong>Small OSS maintainers</strong></td><td>Issues, PRs, Sponsors</td><td>Occasional AI junk PRs</td><td>No; they're advocates</td></tr>
+    <tr><td><strong>Large OSS maintainers</strong></td><td>Triage hundreds of issues and PRs</td><td>Floods of AI PRs, burnout, outages blocking releases</td><td>Almost never; loudest and most visible</td></tr>
+    <tr class="pick"><td><strong>AI-heavy startups (2-20 engineers)</strong> <span class="tag info">best first customer</span></td><td>PRs, Actions, many agents at once</td><td>Agents open more PRs than humans can review; giant PRs; parallel branches conflict</td><td>Yes. One tech lead feels the pain and holds the card; already pays $12-40 per dev for review tools</td></tr>
+    <tr><td><strong>Mid-size (50-500)</strong></td><td>Required checks, CODEOWNERS, metrics</td><td>Review latency, governing AI PRs</td><td>Yes, but slowly: security reviews, SSO</td></tr>
+    <tr><td><strong>Enterprise</strong></td><td>SSO, audit, compliance, Copilot</td><td>AI-code provenance, data residency</td><td>Big money, very slow sales</td></tr>
+    <tr><td><strong>EU public sector</strong></td><td>Moving off US vendors</td><td>Sovereignty, lock-in</td><td>Through tenders. The Dutch government picked Forgejo and rejected open-core vendors</td></tr>
+  </tbody>
+</table></div>
+<p class="caption">Rows and budgets are from the segment research; budget figures are inference, not survey data.</p>
+
+<details class="check"><summary>Large OSS maintainers have the worst pain. Why aren't they the first customer?</summary><p>They don't have budgets. Pain alone doesn't make a customer: you need pain, money and someone who can install the tool in five minutes, all in one person. At a small AI-heavy startup, the tech lead is all three. Maintainers are still valuable as free design partners and word of mouth, the way CodeRabbit gives its tool free to 150,000 open-source projects.</p></details>
+
+<h2 id="problems">The problems, ranked by whether anyone would pay or switch over them</h2>
+<p>Most 2026 complaints trace back to one cause: <strong>agents produce code faster than GitHub's servers and its human reviewers can absorb it</strong>. GitHub says so itself; its April 2026 availability post blames "agentic development workflows" that "accelerated sharply" from December 2025.</p>
+
+<div class="table-wrap wide"><table>
+  <thead><tr><th>Problem</th><th>Who raises it</th><th>Strongest evidence</th><th>Severity</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Outages and reliability</strong></td><td>Teams that ship daily; big maintainers</td><td>23-37 incidents a month on third-party trackers; merge queue reverted code in 658 repos; 7h47m outage in August</td><td><span class="tag bad">Severe</span> for daily shippers</td></tr>
+    <tr><td><strong>Actions CI</strong></td><td>Platform engineers, monorepo teams</td><td>Several 400-800-point HN posts; a whole paid category of faster runners (Blacksmith, Depot, Buildkite)</td><td><span class="tag bad">Severe</span>, already sold by others</td></tr>
+    <tr><td><strong>Review overload and AI junk PRs</strong></td><td>Big OSS maintainers; agent-heavy teams</td><td>curl ended its bug bounty; GitHub added a "disable PRs" switch; review time +91% in the Faros data</td><td><span class="tag bad">Severe</span>; only companies have budget</td></tr>
+    <tr><td><strong>AI push and trust</strong></td><td>Anti-AI open source, privacy-minded devs</td><td>Copilot inserted ads into 11,400+ PRs; training on Copilot data by default; Zig left</td><td><span class="tag warn">Switch-worthy</span> for a group that rarely pays</td></tr>
+    <tr><td><strong>Agent workspaces and Git usability</strong></td><td>Agent-heavy devs, jj users</td><td>Theo's thread; jj's growth; many worktree-manager tools</td><td><span class="tag warn">Growing</span>, mostly solved locally</td></tr>
+    <tr><td><strong>Privacy inside public repos</strong></td><td>Theo; open-core companies</td><td>Only Theo's thread so far</td><td><span class="tag">Unproven</span></td></tr>
+    <tr><td><strong>Slow PR pages</strong></td><td>Reviewers of big diffs</td><td>GitHub shipped up to 67% faster pages in Feb 2026</td><td><span class="tag">Being fixed</span></td></tr>
+    <tr><td><strong>Stacked diffs</strong></td><td>Ex-Meta/Google engineers</td><td>Shipped natively on Oct 6, 2026</td><td><span class="tag ok">Solved by GitHub</span></td></tr>
+    <tr><td><strong>Large files, monorepos, takedowns</strong></td><td>Game, ML and media-tool projects</td><td>Git LFS cost and lock-in; DMCA-driven moves</td><td><span class="tag">Niche</span></td></tr>
+  </tbody>
+</table></div>
+<p class="caption">Severity is from the problems research: "severe" means people already pay or switch over it. HN points measure attention, not how many people are affected.</p>
+
+<h3>Each problem in more detail</h3>
+<details><summary>Reliability <small>Azure migration plus agent load; status page vs third-party numbers</small></summary>
+  <p>GitHub started moving off its own Virginia data centers to Azure in October 2025, during the agent traffic surge. Its own post (April 2026) called two incidents "not acceptable" and set priorities as "availability first, then capacity, then new features."</p>
+  <ul>
+    <li><strong>Incident counts:</strong> isgithubcooked.com, a third-party tracker, shows about 23 incidents a month recently and 37 in February 2026. Trailing 3-month uptime: Actions 98.21% (about 6.5 days down), PRs 98.49%, Git operations 99.51%. GitHub's own status page shows about 99.9%. The two count differently, and neither is an independent measurement.</li>
+    <li><strong>Correctness, not just downtime:</strong> on April 23, 2026 a feature leaking past a flag made squash merges in the merge queue revert earlier merges. That hit 2,092 PRs in 658 repos, and GitHub "could not safely repair every repository automatically." Silent wrong code on main is what companies fear most.</li>
+    <li><strong>Security:</strong> CVE-2026-3854 allowed remote code execution through <code>git push</code>; about 3,800 internal GitHub repos were breached in May 2026 through an employee's malicious VS Code extension.</li>
+  </ul>
+</details>
+<details><summary>Actions CI <small>YAML, the push-and-wait loop, the pricing scare, supply-chain attacks</small></summary>
+  <ul>
+    <li><strong>Debug loop:</strong> you can't run the pipeline locally the same way, so you push, wait, read logs, and push again. The log viewer has been reported to crash browsers.</li>
+    <li><strong>Config:</strong> YAML plus GitHub's own expression language; confusing caching where misses are silent; a hard-to-follow token permissions model.</li>
+    <li><strong>Pricing scare:</strong> in December 2025 GitHub announced $0.002 a minute for self-hosted runners, about $86 a month for a runner that's always on. It backed off within about 48 hours, but trust took the hit.</li>
+    <li><strong>Supply chain:</strong> in March 2025 the popular <code>tj-actions/changed-files</code> action was hijacked to dump secrets into logs. About 23,000 repos used it.</li>
+    <li><strong>Counterpoint:</strong> it's still "one of the best free CI services in the world." Free CI is a reason people stay.</li>
+  </ul>
+</details>
+<details><summary>Review overload and AI junk PRs <small>the problem with money behind it</small></summary>
+  <ul>
+    <li><strong>Open source:</strong> curl ended its bug bounty in January 2026 after a flood of AI-written reports. Godot's co-founder and the RPCS3 team asked people to stop sending AI PRs. tldraw auto-closes outside PRs. One maintainer estimated only about 1 in 10 AI-created PRs is legitimate.</li>
+    <li><strong>GitHub's response:</strong> a setting to disable PRs or limit them to collaborators, plus discussion of AI triage and disclosure labels.</li>
+    <li><strong>Companies:</strong> the problem isn't junk, it's volume. A team's own agents produce more PRs, bigger PRs and branches that conflict with each other. People still pick what to review next and relay feedback by hand.</li>
+    <li><strong>Money:</strong> Cursor bought Graphite (stacked PRs and review) in December 2025; CodeRabbit raised at a reported $1.5B valuation in August 2026; former GitHub CEO Thomas Dohmke's Entire raised a $60M seed on "PRs don't scale for agent code."</li>
+  </ul>
+</details>
+<details><summary>AI push and trust <small>why some people are angry at GitHub for opposite reasons</small></summary>
+  <p>Two groups are angry about AI for opposite reasons. <strong>Anti-AI maintainers</strong> (Zig, Codeberg members, Gentoo) object to Copilot being pushed at them. In March 2026 Copilot inserted promotional "tips" into 11,400+ PRs, including ones humans wrote, and GitHub switched it off the same day. From April 2026, Copilot interaction data on Free/Pro plans is used for training unless you opt out. <strong>AI-heavy users</strong> object to the outages and to being banned elsewhere: Codeberg's members voted 358 to 144 in July 2026 to ban mostly-AI-written projects. The anti-AI group switches but pays with effort, not money. The AI-heavy group has budgets.</p>
+</details>
+<details><summary>Theo's four asks <small>the clearest statement of "Git is the wrong tool for agents"</small></summary>
+  <p>In May 2026 Theo posted "GitHub is dying and git is not the right primitive" and asked someone else to build the fix. His points map to four product ideas:</p>
+  <ol>
+    <li><strong>Partial privacy:</strong> private folders and unreleased security fixes inside a public repo.</li>
+    <li><strong>No bookkeeping:</strong> "Commits are a bad primitive. Branches are worse." He wants jj-style automatic snapshots.</li>
+    <li><strong>Cheap parallel checkouts:</strong> "Worktrees are an abomination." Agents need copy-on-write workspaces.</li>
+    <li><strong>API access:</strong> reading and writing source without a full OS and filesystem.</li>
+  </ol>
+  <p>Caveats: he isn't building it, he's sponsored by CI vendors, and he recommended Codeberg and then turned on it within two months. Treat his posts as a signal from agent-heavy TypeScript developers, not as neutral evidence.</p>
+</details>
+
+<details class="check"><summary>Why are stacked PRs a weak reason to build a GitHub alternative after October 6?</summary><p>GitHub now ships them free on every plan, with approvals kept through rebases and merge-queue support. A team won't switch for something it already has. What GitHub still doesn't do is coordinate many agents: deciding which PR matters, sending review feedback back to the agent, keeping parallel branches mergeable.</p></details>
+
+<h2 id="leaving">The projects that actually leave are values-driven, and some come back</h2>
+<div class="table-wrap wide"><table>
+  <thead><tr><th>Who</th><th>What happened</th><th>Status Oct 2026</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Zig</strong></td><td>Moved to Codeberg in Nov 2025 over a "bloated, buggy" UI, neglected Actions, and a no-AI policy. Gave up GitHub Sponsors, its biggest income source ($170K+ in 2024)</td><td><span class="tag ok">Left</span></td></tr>
+    <tr><td><strong>Ghostty</strong> (Mitchell Hashimoto)</td><td>Announced Apr 28, 2026: "no longer a place for serious work." 3,521 HN points, no destination named</td><td><span class="tag warn">Still on GitHub</span>, merging daily</td></tr>
+    <tr><td><strong>Gleam</strong></td><td>Moved to Tangled, a federated forge built on Bluesky's protocol</td><td><span class="tag ok">Left</span></td></tr>
+    <tr><td><strong>Gentoo</strong></td><td>Added a Codeberg mirror as a gradual move</td><td><span class="tag">Partial</span></td></tr>
+    <tr><td><strong>Theo</strong></td><td>Told viewers to move to Codeberg and donated, then denounced its AI ban in July</td><td><span class="tag bad">Reversed</span></td></tr>
+    <tr><td><strong>Endurain</strong></td><td>Moved from Codeberg back to GitHub on Oct 8, 2026</td><td><span class="tag bad">Came back</span></td></tr>
+    <tr><td><strong>Commercial companies</strong></td><td>No public examples of a large company leaving GitHub in 2025-2026 found</td><td><span class="tag">Stay and add tools</span></td></tr>
+  </tbody>
+</table></div>
+<p>The pattern: announcing an exit is cheap and finishing one is expensive. Projects that move accept fewer contributors for their values. Companies complain, stay, and buy layers on top: faster CI runners, AI review, Graphite. The alternatives have their own risks too: Codeberg's policy shifts and DDoS attacks, a critical Forgejo security bug in September 2026, and the work of self-hosting GitLab.</p>
+
+<h2 id="alts">Alternatives fall into four groups, and each competes on something different</h2>
+<div class="table-wrap wide"><table>
+  <thead><tr><th>Group</th><th>Examples</th><th>Competes on</th><th>Weakness</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Incumbent forges</strong></td><td>GitLab ($29/user Premium), Bitbucket ($3.65-7.25)</td><td>Bundles, self-hosting (GitLab)</td><td>Corporate, slow; same model as GitHub</td></tr>
+    <tr><td><strong>Open-source forges</strong></td><td>Forgejo/Codeberg, Gitea, sourcehut, Tangled, Radicle, Gerrit</td><td>Ownership, ethics, self-hosting</td><td>Small communities; volunteer capacity; Codeberg bans AI-heavy projects</td></tr>
+    <tr><td><strong>Layers over GitHub</strong></td><td>Graphite (now Cursor's), CodeRabbit, Greptile, Copilot review</td><td>Better review, stacks, AI comments</td><td>Exposed to GitHub copying them, as it did with stacks</td></tr>
+    <tr><td><strong>Agent-era platforms</strong></td><td>Cursor Origin, Entire ($60M seed), ERSC (jj's creator), GitButler, GitCafe, Cloudflare Artifacts, Pierre Code Storage</td><td>Agents as users; Git storage for AI apps</td><td>Mostly early or tied to one editor; very well funded</td></tr>
+  </tbody>
+</table></div>
+<p>Nobody well-funded is chasing <strong>reliable, AI-neutral, professionally run</strong> hosting for small teams. Codeberg and sourcehut serve open source and don't target private commercial teams. Raw Git storage is now a metered commodity (Cloudflare Artifacts at $0.50/GB-month), so a small team doesn't need to run Git servers at scale. But neither does anyone else.</p>
+
+<h2 id="mistake">The common mistake: "GitHub is a Git host, so a better Git host wins"</h2>
+<p>This is wrong, and it's the trap most GitHub alternatives fall into. Hosting Git is the easy, portable, cheap part. GitHub's grip comes from the community graph, free CI, years of PR and issue history, integrations and permission setups. A faster, nicer host still asks every user to give all of that up at once.</p>
+<p>The evidence agrees. The projects that left are ones willing to lose contributors. Companies with money don't leave; they buy tools that sit on GitHub. And the newest funded entrants either sync both ways with GitHub (Cursor Origin) or mirror it (Entire) instead of asking for a hard switch. A new product wins by fixing one painful job for people who pay, working with GitHub on day one, and becoming a full forge only once users already depend on it.</p>
+
+<h2 id="you">What this means for you: the open gap is coordinating agents' work, not hosting it</h2>
+<p>Put together, the page points one way:</p>
+<ul>
+  <li><strong>Who:</strong> the tech lead at a 2-20 engineer startup whose agents out-produce its reviewers. Large OSS maintainers as free design partners.</li>
+  <li><strong>What:</strong> triage that decides which agent PR to look at first, review feedback sent straight back to the agent through a CLI or MCP, and keeping parallel agent branches mergeable. Work with GitHub, don't replace it.</li>
+  <li><strong>Not:</strong> stacks (GitHub has them), generic AI review comments (CodeRabbit and Copilot), or a new forge first (high switching cost, low price ceiling).</li>
+  <li><strong>Later:</strong> Theo's asks (privacy, snapshots, copy-on-write workspaces) and a self-hostable forge, once teams rely on you.</li>
+</ul>
+<p>The interview plan, pricing and break-even math are in the <a href="GitHub%20alternative%20founder%20briefing.md">founder briefing</a> next to this file.</p>
+
+<details class="check"><summary>A founder says "we'll beat GitHub with faster pages and no outages." What's the first question to ask?</summary><p>"Who pays, and what do they give up to switch?" Faster pages help, but the paying team would lose CI, PR history, integrations and its contributors to get them. Unless the product works alongside GitHub, or fixes something painful enough to justify that cost, speed alone won't move them. GitHub is also already fixing page speed.</p></details>
+
+</main>
+<footer>
+  <p>Built on October 12, 2026 from four research notes in <code>git-feedback-research/research_notes/GitHub alternative founder briefing/</code>. Primary sources include Pro Git, the jj docs, GitHub's pricing page, changelog and blog, Microsoft earnings calls, GitLab's SEC filings, and posts from Theo, Mitchell Hashimoto and Zig. Not verified by me: CodeRabbit and Greptile revenue (aggregator figures), the Faros AI study (secondary summaries), the Stack Overflow 2025 percentages (search summary), and third-party uptime trackers, which count incidents of every severity. GitHub publishes no per-feature usage data and no revenue after July 2024.</p>
+</footer>
+<script>addEventListener("beforeprint", () => document.querySelectorAll("details").forEach((d) => (d.open = true)));</script>
+</body>
+</html>

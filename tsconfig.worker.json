@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worker.tsbuildinfo",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["./worker-configuration.d.ts", "node", "@cloudflare/vitest-plugin/types"]
+  },
+  // git-core is runtime-agnostic but typechecked here; its end-to-end tests use node:child_process.
+  "include": ["worker", "features/*/server", "features/git-core", "shared"]
+}

@@ -1,0 +1,40 @@
+{
+	"name": "taru",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc -b && vite build",
+		"typecheck": "tsc -b",
+		"lint": "oxlint --deny-warnings",
+		"test": "vitest run",
+		"check": "bun run lint && bun run typecheck && bun run test && vite build",
+		"setup": "bun scripts/setup.mjs",
+		"doctor": "bun scripts/doctor.mjs",
+		"preview": "bun run build && vite preview",
+		"deploy": "bun run build && wrangler deploy",
+		"cf-typegen": "wrangler types"
+	},
+	"dependencies": {
+		"pako": "^3.0.2",
+		"react": "^19.2.8",
+		"react-dom": "^19.2.8"
+	},
+	"devDependencies": {
+		"@cloudflare/vite-plugin": "^1.64.0",
+		"@cloudflare/vitest-plugin": "^1.4.6",
+		"@types/node": "^26.6.5",
+		"@types/pako": "^3.0.0",
+		"@types/react": "^19.2.18",
+		"@types/react-dom": "^19.2.7",
+		"@vitejs/plugin-react": "^6.1.1",
+		"oxlint": "^1.81.0",
+		"typescript": "~6.0.2",
+		"vite": "^8.3.0",
+		"vitest": "^4.1.0",
+		"wrangler": "^4.151.3"
+	},
+	"description": "Source control built for coding agents. Git-compatible, runs on Cloudflare.",
+	"license": "AGPL-3.0-only"
+}

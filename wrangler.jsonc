@@ -1,0 +1,38 @@
+// Worker config. Wrangler reads this for dev, deploy and tests (@cloudflare/vitest-plugin only reads Wrangler config,
+// which is why this project uses Wrangler and not the beta `cf` CLI).
+// After changing bindings, run `bun run cf-typegen` to regenerate worker-configuration.d.ts.
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "taru",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-10-19",
+	"compatibility_flags": ["nodejs_compat"],
+	"assets": {
+		"not_found_handling": "single-page-application",
+		// Git clients and the JSON API must reach the Worker, never the SPA fallback.
+		"run_worker_first": ["/api/*", "/*/*.git", "/*/*.git/*"]
+	},
+	"observability": {
+		"enabled": true,
+		"traces": { "enabled": true }
+	},
+	"upload_source_maps": true,
+	"durable_objects": {
+		// One RepoObject per repository: refs, commit graph and small objects live in its SQLite.
+		"bindings": [{ "name": "REPO", "class_name": "RepoObject" }]
+	},
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["RepoObject"] }],
+	"r2_buckets": [
+		// Large file contents, keyed by content hash.
+		{ "binding": "BLOBS", "bucket_name": "taru-blobs" }
+	],
+	"d1_databases": [
+		// Accounts, repo index, waitlist. Migrations in migrations/.
+		{ "binding": "DB", "database_name": "taru", "migrations_dir": "migrations" }
+	],
+	"vars": {
+		"TARU_PUBLIC_URL": "http://localhost:5173"
+	}
+	// Secrets (set with `wrangler secret put`, locally in .dev.vars):
+	//   TARU_ADMIN_TOKEN  password for git push and repo creation until accounts land
+}
