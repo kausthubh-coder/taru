@@ -2,12 +2,290 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>taru</title>
+    <title>Taru: source control built for coding agents</title>
+    <meta
+      name="description"
+      content="Agents read, write and merge code through an API, with no clone. git clone and git push still work, and every push is copied to GitHub. Open source, runs on Cloudflare."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafafa" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161616" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Open Graph. TODO: once the domain exists, make og:image and og:url absolute; crawlers ignore relative image URLs. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Taru: source control built for coding agents" />
+    <meta
+      property="og:description"
+      content="Agents read, write and merge code through an API, with no clone. git clone and git push still work, and every push is copied to GitHub. Open source, runs on Cloudflare."
+    />
+    <meta property="og:image" content="/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- Both fonts are on the first screen (the headline and the terminal). Self-hosted, latin subset. -->
+    <link rel="preload" href="/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jetbrains-mono-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/features/landing/ui/landing.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <header class="wrap top">
+      <a class="brand" href="/" aria-label="Taru, home">
+        <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M7 18V8" />
+          <path d="M7 13c0-4 10-2.5 10-7" />
+          <circle cx="7" cy="19" r="2.25" fill="currentColor" stroke="none" />
+          <circle cx="7" cy="6" r="2.25" fill="currentColor" stroke="none" />
+          <circle class="tip" cx="17" cy="5" r="2.25" stroke="none" />
+        </svg>
+        Taru
+      </a>
+      <nav class="nav" aria-label="Page">
+        <a href="#fixes">What it fixes</a>
+        <a href="#how">How it works</a>
+        <a href="#self-host">Self-host</a>
+        <!-- TODO: point at the repository once it's public. -->
+        <a class="nav-keep" href="#">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="wrap hero" aria-labelledby="pitch">
+        <div>
+          <h1 id="pitch">Source control built for coding agents</h1>
+          <p class="lede">
+            Agents read, write and merge code through an API, with no clone. <code>git clone</code> and
+            <code>git push</code> still work, and every push is copied to GitHub automatically. Open source, and it
+            runs on Cloudflare.
+          </p>
+
+          <form class="waitlist" data-waitlist method="post" action="/api/waitlist">
+            <div class="waitlist-row">
+              <label class="sr-only" for="email-top">Email</label>
+              <input
+                class="input"
+                id="email-top"
+                type="email"
+                name="email"
+                autocomplete="email"
+                inputmode="email"
+                spellcheck="false"
+                placeholder="you@company.com"
+                maxlength="254"
+                required
+              />
+              <button class="button" type="submit">Join the waitlist</button>
+            </div>
+            <p class="form-status" data-status role="status" aria-live="polite"></p>
+            <p class="form-note" id="joined">You're on the list. We'll email you when there's something to try.</p>
+            <p class="form-note is-error" id="bad-email">That email doesn't look right. Check it and try again.</p>
+          </form>
+          <p class="reassure">One email when there's something to try. Free to self-host.</p>
+        </div>
+
+        <!-- Demo slot. The 60-second video goes here; until then, a static transcript of what it will show. -->
+        <figure class="demo" aria-labelledby="demo-title">
+          <div class="demo-bar">
+            <span class="label" id="demo-title"><span class="dot" aria-hidden="true"></span>Demo preview</span>
+            <span class="label">Video coming</span>
+          </div>
+          <pre><code><span class="c"># An agent changes a file through the API.</span>
+<span class="c"># No clone, no worktree.</span>
+<span class="p">$</span> curl -X POST $TARU/api/repos/acme/api/commits \
+    -H "Authorization: Bearer $TARU_TOKEN" \
+    -d @change.json
+{ "commit": "7f3c2a1", "files": ["src/limit.ts"] }
+
+<span class="c"># A teammate's laptop, plain git</span>
+<span class="p">$</span> git pull
+Updating e91d0b4..7f3c2a1
+ src/limit.ts | 12 ++++++++----
+
+<span class="c"># GitHub, moments later</span>
+<span class="p">$</span> gh api repos/acme/api/commits/main --jq .sha
+7f3c2a1c9e4b0d8f6a2e1c3b5d7f9a0b2c4d6e8f</code></pre>
+          <figcaption class="demo-caption">
+            A mock-up of the planned demo. The agent API is being built, so names may change.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="section" id="fixes" aria-labelledby="fixes-title">
+        <div class="wrap">
+          <h2 id="fixes-title">What it fixes</h2>
+          <p class="section-intro">
+            Most of these were raised by developers like
+            <a href="https://x.com/theo/status/2059428277786468407">Theo (t3.gg)</a> about Git and GitHub in
+            agent-heavy teams. Two are only partly solved, and the list says so.
+          </p>
+          <dl class="fixes">
+            <div>
+              <dt>Private folders inside a public repo</dt>
+              <dd>The server decides who sees which folders. The GitHub copy leaves private folders out.</dd>
+            </div>
+            <div>
+              <dt>In-flight PRs and unreleased security fixes</dt>
+              <dd>Private until you publish them.</dd>
+            </div>
+            <div>
+              <dt><code>.env</code> leaks and sharing secrets</dt>
+              <dd>
+                Secrets are encrypted, never in history, and handed only to the people, agents and CI that need
+                them. A push that contains a secret is blocked.
+              </dd>
+            </div>
+            <div>
+              <dt>Agents need a full OS and a checkout to touch code</dt>
+              <dd>An agent API and MCP server: read, write and merge with no clone.</dd>
+            </div>
+            <div>
+              <dt>Worktree pain with parallel agents</dt>
+              <dd>No worktrees through the API. The CLI makes instant local workspaces.</dd>
+            </div>
+            <div>
+              <dt>Commits and branches as busywork</dt>
+              <dd>The CLI snapshots work automatically. Organize history later.</dd>
+            </div>
+            <div>
+              <dt>Merge queues that are slow and buggy</dt>
+              <dd>No merge queue. Tests run after the merge, and AI resolves conflicts.</dd>
+            </div>
+            <div>
+              <dt>Large files</dt>
+              <dd>Stored in R2, with no download fees.</dd>
+            </div>
+            <div>
+              <dt>Slow, flaky CI</dt>
+              <dd>
+                <b>Partly.</b> CI stays on GitHub Actions through the copy, or runs on Depot or Buildkite directly.
+                Failures go straight back to the agent.
+              </dd>
+            </div>
+            <div>
+              <dt>GitHub outages</dt>
+              <dd>
+                <b>Partly.</b> Serving your repo doesn't depend on GitHub, but then our uptime is our job.
+              </dd>
+            </div>
+            <div>
+              <dt>Getting people to leave GitHub</dt>
+              <dd>They don't have to. The automatic copy keeps contributors, stars and CI where they are.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="section" id="how" aria-labelledby="how-title">
+        <div class="wrap">
+          <h2 id="how-title">How it works</h2>
+          <div class="how">
+            <div>
+              <h3>Git-compatible</h3>
+              <p>
+                Taru speaks Git's HTTP protocol, so <code>git clone</code>, <code>git push</code> and
+                <code>git fetch</code> work with the client you already have. Nothing to install on a laptop.
+              </p>
+            </div>
+            <div>
+              <h3>The server does the heavy work</h3>
+              <p>
+                History, blame, commits, merges and rebases happen on the server, so an agent needs an API call,
+                not a checkout. The idea comes from Anthropic's
+                <a href="https://www.anthropic.com/engineering/redesigning-source-control">Scion</a>, which replaced
+                Git inside Anthropic.
+              </p>
+            </div>
+            <div>
+              <h3>Content-addressed storage on Cloudflare</h3>
+              <p>
+                Each file's contents are stored once, keyed by hash. A Durable Object per repository keeps refs,
+                commits and small objects in SQLite, and large files go to R2.
+              </p>
+            </div>
+            <div>
+              <h3>The GitHub copy</h3>
+              <p>
+                Every push is mirrored to a GitHub repository you own, with private folders left out. Actions,
+                contributors and stars stay where they are.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="self-host" aria-labelledby="selfhost-title">
+        <div class="wrap selfhost">
+          <div>
+            <h2 id="selfhost-title">Open source. Runs on your own Cloudflare account.</h2>
+            <p class="section-intro">
+              Taru is <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a>. Deploy it to your own
+              Cloudflare account and the code and the data stay yours.
+            </p>
+            <p class="section-intro">
+              It's free while you try it, on Cloudflare's free plan. Once a team uses it for real it costs about $5 a
+              month, which is Cloudflare's paid Workers plan, not a Taru fee.
+            </p>
+          </div>
+          <pre class="commands"><code><span class="p">$</span> bun run setup
+<span class="p">$</span> bun run deploy</code></pre>
+        </div>
+      </section>
+
+      <section class="section" id="status" aria-labelledby="status-title">
+        <div class="wrap">
+          <h2 id="status-title">Where it is</h2>
+          <p class="section-intro">Taru is early. This is the order it's being built in.</p>
+          <ol class="steps">
+            <li>
+              <span>Core: create a repo, <code>git push</code> and <code>git clone</code>, import from GitHub, the
+                automatic GitHub copy.</span>
+              <span class="label now">Building now</span>
+            </li>
+            <li><span>Agent API and MCP server: read, edit, commit and merge with no clone.</span></li>
+            <li><span>Private folders and secrets.</span></li>
+            <li><span>Review web app.</span></li>
+            <li><span>CLI: automatic snapshots and instant agent workspaces.</span></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section join" id="join" aria-labelledby="join-title">
+        <div class="wrap">
+          <h2 id="join-title" style="max-width: none">Get an email when there's something to try</h2>
+          <form class="waitlist" data-waitlist method="post" action="/api/waitlist">
+            <div class="waitlist-row">
+              <label class="sr-only" for="email-bottom">Email</label>
+              <input
+                class="input"
+                id="email-bottom"
+                type="email"
+                name="email"
+                autocomplete="email"
+                inputmode="email"
+                spellcheck="false"
+                placeholder="you@company.com"
+                maxlength="254"
+                required
+              />
+              <button class="button" type="submit">Join the waitlist</button>
+            </div>
+            <p class="form-status" data-status role="status" aria-live="polite"></p>
+          </form>
+          <p class="reassure">One email, nothing else.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap footer">
+      <p>Taru is Sanskrit for tree. Git history is one.</p>
+      <nav class="footer-links" aria-label="Footer">
+        <!-- TODO: point at the repository once it's public. -->
+        <a href="#">GitHub</a>
+        <a href="https://github.com/sponsors/kausthubh-coder">Sponsor on GitHub</a>
+        <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a>
+      </nav>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
