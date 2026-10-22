@@ -1,2 +1,4 @@
 # Copy to .dev.vars for local dev (scripts/setup.mjs does this). Never commit .dev.vars.
 TARU_ADMIN_TOKEN=dev-admin-token
+# Optional: a fine-grained GitHub PAT for the GitHub copy. Leave it out locally (the copy goes to a fake GitHub).
+# GITHUB_MIRROR_TOKEN=

@@ -96,12 +96,16 @@ describe("GET /api/repos", () => {
 	});
 });
 
+function importInto(owner: string, name: string, body: unknown, headers: Record<string, string> = { Authorization: adminAuth() }) {
+	return call(`/api/repos/${owner}/${name}/import`, { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
+}
+
+function setMirror(owner: string, name: string, body: unknown, headers: Record<string, string> = { Authorization: adminAuth() }) {
+	return call(`/api/repos/${owner}/${name}/mirror`, { method: "PUT", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
+}
+
 describe("POST /api/repos/:owner/:name/import", () => {
 	beforeAll(applyRepoMigrations);
-
-	function importInto(owner: string, name: string, body: unknown, headers: Record<string, string> = { Authorization: adminAuth() }) {
-		return call(`/api/repos/${owner}/${name}/import`, { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
-	}
 
 	it("needs the admin token, a known repo and a usable URL", async () => {
 		await create({ owner: "imp", name: "target" });
@@ -143,10 +147,6 @@ describe("POST /api/repos/:owner/:name/import", () => {
 
 describe("PUT /api/repos/:owner/:name/mirror", () => {
 	beforeAll(applyRepoMigrations);
-
-	function setMirror(owner: string, name: string, body: unknown, headers: Record<string, string> = { Authorization: adminAuth() }) {
-		return call(`/api/repos/${owner}/${name}/mirror`, { method: "PUT", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
-	}
 
 	it("needs the admin token and a usable URL", async () => {
 		await create({ owner: "mir", name: "cfg" });
