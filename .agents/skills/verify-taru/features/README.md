@@ -24,3 +24,5 @@ The maintained source for verifying Taru's user-facing behavior. Read this, then
 | Git push and clone | `git-push-clone.md` | Real `git` client over smart HTTP |
 | Import from GitHub | `github-import.md` | `POST /api/repos/:owner/:name/import` |
 | GitHub copy (mirror) | `github-mirror.md` | `PUT /api/repos/:owner/:name/mirror`, status on `GET /api/repos/:owner/:name` |
+| Agent API | `agent-api.md` | `GET .../tree`, `GET .../file`, `POST .../commits`, `POST .../merges` under `/api/repos/:owner/:name` |
+| MCP server | `mcp.md` | `POST /mcp` (Streamable HTTP), any MCP client |

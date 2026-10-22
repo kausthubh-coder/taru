@@ -68,6 +68,35 @@ plain `fetch`), so GitHub is just another Git server to us.
 - **Token:** the `GITHUB_MIRROR_TOKEN` secret (a fine-grained PAT) goes out as HTTP Basic `x-access-token:<token>`,
   only to `github.com`. Unset locally, where the copy goes to `scripts/fake-github.mjs`.
 
+## Agent API and MCP
+
+Scion's second idea, applied: an agent edits a repo through the server, with no clone. Both surfaces run
+the same four operations (`features/git-core/operations.ts`) inside the RepoObject, so the storage calls
+stay local and ref writes go through `updateRefs` like a push does (which is also where the GitHub copy
+hooks in).
+
+- **REST** (`features/agent-api/server/routes.ts`): `GET /api/repos/:owner/:name/tree?ref&path`,
+  `GET .../file?ref&path`, `POST .../commits`, `POST .../merges`. Reads are public like clone; writes need
+  the admin token like push. Errors are `{error: <code>, message}` so an agent can branch on the code.
+- **MCP** (`features/agent-api/server/mcp.ts`): `POST /mcp`, Streamable HTTP, stateless JSON responses, no
+  sessions or SSE. Hand-rolled JSON-RPC (initialize, ping, tools/list, tools/call, notifications) instead of
+  the SDK's transport, which is built around sessions and streams. Tools: `list_repos`, `read_tree`,
+  `read_file`, `commit_changes`, `merge_branches`.
+- **Commits are compare-and-swap.** Every commit carries `expected_head`, the branch's current commit (or
+  `null` to create the branch). A stale head is a 409 with the current one: the agent reads again and retries.
+  No "last write wins", no lock. The server builds the blobs, trees and commit itself; a 100755 or symlink
+  entry is a `mode` on the change.
+- **Merge semantics.** `from` already in `into`: `up_to_date`. `into` an ancestor of `from`: fast-forward,
+  no new commit. Otherwise a three-way merge: the merge base is the common ancestor no other common ancestor
+  descends from (criss-cross histories take the first one found; git would merge the bases recursively),
+  trees merge entry by entry, and a text file changed on both sides goes through diff3 (Myers diffs against
+  the base, chunks taken from whichever side changed them, touching changes conflict, as in git). A clean
+  merge is a commit with two parents. Any conflict means nothing is written and the answer is a 409 report:
+  per path, the kind (`content`, `binary`, `symlink`, `add/add`, `modify/delete`, `mode`, `file/directory`),
+  the base/ours/theirs blob ids, and for text the file with `<<<<<<<` markers. Resolution is a normal commit
+  on one of the branches, then merge again. Clean merges match `git merge-tree --write-tree`; the Node tests
+  check that against the real binary.
+
 ## Limits we accept for now
 
 - Git over HTTPS only. Workers can't accept SSH.

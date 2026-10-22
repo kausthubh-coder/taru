@@ -30,7 +30,7 @@ React with Vite, Vitest. Open source under AGPL-3.0.
 | `features/landing/ui/` | The landing page |
 | `src/` | React entry, thin: renders features |
 | `migrations/` | D1 migrations |
-| `scripts/` | `setup.mjs`, `doctor.mjs`, `remove-worktree.mjs`, `cloud.mjs` |
+| `scripts/` | `setup.mjs`, `doctor.mjs`, `remove-worktree.mjs`, `cloud.mjs`, `fake-github.mjs` (real `git http-backend` standing in for GitHub), `demo.mjs` (the 60-second demo, with checks) |
 | `wrangler.jsonc` | Bindings: `REPO`, `BLOBS`, `DB`. Run `bun run cf-typegen` after changing it |
 
 Each feature lives in one folder. Server code goes in `features/<name>/server/`, browser code in
