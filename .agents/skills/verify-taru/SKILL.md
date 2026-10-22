@@ -29,8 +29,13 @@ node .agents/skills/verify-taru/verify.mjs <command>
 
 - `launch` refuses if `.verify/instance.json` exists: one verify instance per checkout. Run `stop` first.
 - Ready means `ready: http://localhost:<port>` was printed: the page contains "Source control built for coding agents" and `/api/nope` answers 404.
+- `shot` and `waitlist` need Playwright's browser. On a fresh machine they fail with "Executable doesn't exist"; run `bunx playwright install chromium-headless-shell` once.
 - The instance never shares state with `bun run dev` (that uses `.wrangler/state` on the dev port). Two checkouts can verify at once: ports come from each checkout's own dev port.
 - Logs: `.verify/dev.log`.
+
+## The demo
+
+`node scripts/demo.mjs --taru <url>` runs the 60-second demo against any Taru (a verify instance works): a repo with a GitHub copy (a local fake GitHub unless `--github <url>`), an MCP agent fixes a bug with no clone, `git pull` shows the fix, and the copy has the same commit. It prints `PASS` or exits 1. `--agent wait` waits for a real agent instead and prints the `claude mcp add` line.
 
 ## Evidence
 
