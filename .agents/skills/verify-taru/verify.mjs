@@ -387,7 +387,7 @@ async function agentApi() {
 	const noAuth = await restCall(inst, null, "POST", `${base}/commits`, { branch: "main", expected_head: file.body.commit, message: "x", changes });
 	t.step("POST commits without token", `${noAuth.status} ${JSON.stringify(noAuth.body)}`);
 	check(noAuth.status === 401, "write needs auth");
-	const commit = await restCall(inst, token, "POST", `${base}/commits`, { branch: "main", expected_head: file.body.commit, message: "Edit through the agent API\n\nNo clone involved.", author: { name: "Agent", email: "agent@taru.dev" }, changes });
+	const commit = await restCall(inst, token, "POST", `${base}/commits`, { branch: "main", expected_head: file.body.commit, message: "Edit through the agent API\n\nNo clone involved.", author: { name: "Agent", email: "agent@taru.invalid" }, changes });
 	t.step("POST commits (edit nested, add binary, delete, new folder, executable)", `${commit.status} ${JSON.stringify(commit.body)}`);
 	check(commit.status === 201, "commit created");
 	writeFileSync(join(out, "agent-api-commit.json"), JSON.stringify({ request: changes.map((c) => ({ ...c, content_base64: c.content_base64 ? `<${c.content_base64.length} chars>` : undefined })), response: commit.body }, null, 2));

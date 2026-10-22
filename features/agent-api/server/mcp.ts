@@ -22,7 +22,7 @@ const REPO = { type: "string", description: 'Repository as "owner/name".' };
 const REF = { type: "string", description: 'Branch ("main"), tag, full ref ("refs/heads/main") or 40-hex commit id. Default: the branch HEAD points at.' };
 const AUTHOR = {
 	type: "object",
-	description: "Who made the change. Default: Taru <agent@taru.dev>.",
+	description: "Who made the change. Default: Taru <agent@taru.invalid>.",
 	properties: { name: { type: "string" }, email: { type: "string" } },
 	required: ["name", "email"],
 };

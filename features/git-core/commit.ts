@@ -8,7 +8,8 @@ export interface Ident {
 	email: string;
 }
 
-export const TARU_IDENT: Ident = { name: "Taru", email: "agent@taru.dev" };
+// .invalid on purpose: there is no Taru domain yet, and commits outlive whatever we pick.
+export const TARU_IDENT: Ident = { name: "Taru", email: "agent@taru.invalid" };
 
 export interface CommitInput {
 	tree: Oid;
