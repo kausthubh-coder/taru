@@ -1,0 +1,78 @@
+<!doctype html>
+<!-- The docs shell. features/docs/server/docs.ts fetches it and fills the docs:* markers with a page rendered from
+     features/docs/content. Served on its own it is an empty page. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafaf7" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d0e0b" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="preload" href="/fonts/instrument-sans-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jetbrains-mono-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+    <title><!--docs:title--></title>
+    <meta name="description" content="<!--docs:description-->" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/og.png" />
+    <link rel="alternate" type="text/markdown" href="<!--docs:markdown-->" />
+    <link rel="stylesheet" href="/features/docs/ui/docs.css" />
+  </head>
+  <body>
+    <header class="wrap site-header">
+      <a class="logo" href="/" aria-label="Taru, home">
+        <svg viewBox="2.5 0.5 84.34 29" width="81" height="28" aria-hidden="true">
+          <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 3.5V21a6 6 0 0 0 6 6h5" />
+            <path d="M5 12h6c6 0 9-2 10.5-6" />
+          </g>
+          <circle class="logo-node" cx="23.5" cy="6" r="4.25" />
+          <path fill="currentColor" d="M44.59 26.28Q42.06 26.28 40.86 25.08Q39.65 23.88 39.65 21.47V9.11L43.08 7.83V21.55Q43.08 22.55 43.62 23.04Q44.16 23.52 45.33 23.52Q45.78 23.52 46.14 23.45Q46.5 23.37 46.82 23.26V25.93Q46.5 26.09 45.91 26.18Q45.32 26.28 44.59 26.28ZM37 14.89V12.23H46.82V14.89ZM57.45 26Q57.3 25.45 57.25 24.8Q57.19 24.15 57.19 23.25H57.07V16.72Q57.07 15.64 56.46 15.08Q55.85 14.52 54.6 14.52Q53.4 14.52 52.68 14.96Q51.97 15.41 51.81 16.24H48.54Q48.76 14.34 50.37 13.15Q51.98 11.96 54.72 11.96Q57.56 11.96 59.01 13.25Q60.47 14.53 60.47 17V23.25Q60.47 23.9 60.56 24.57Q60.65 25.24 60.84 26ZM52.67 26.27Q50.59 26.27 49.36 25.23Q48.13 24.19 48.13 22.44Q48.13 20.55 49.51 19.44Q50.89 18.32 53.41 17.95L57.69 17.31V19.47L53.97 20.04Q52.74 20.23 52.14 20.71Q51.54 21.18 51.54 22.05Q51.54 22.85 52.1 23.26Q52.66 23.68 53.67 23.68Q55.12 23.68 56.09 22.94Q57.07 22.21 57.07 21.16L57.44 23.24Q56.9 24.72 55.67 25.5Q54.44 26.27 52.67 26.27ZM63.59 26V12.23H66.92V15.56H67.02V26ZM67.02 18.82 66.66 15.55Q67.15 13.8 68.3 12.88Q69.45 11.96 71.09 11.96Q71.66 11.96 71.9 12.07V15.28Q71.77 15.23 71.52 15.21Q71.28 15.2 70.93 15.2Q68.95 15.2 67.98 16.07Q67.02 16.94 67.02 18.82ZM78.1 26.27Q76.68 26.27 75.64 25.66Q74.59 25.05 74.03 24.01Q73.48 22.96 73.48 21.63V12.23H76.9V20.92Q76.9 22.2 77.53 22.84Q78.17 23.48 79.33 23.48Q80.37 23.48 81.17 22.99Q81.97 22.51 82.45 21.64Q82.92 20.77 82.92 19.65L83.27 22.95Q82.59 24.45 81.25 25.36Q79.91 26.27 78.1 26.27ZM83.02 26V22.76H82.92V12.23H86.34V26Z" />
+        </svg>
+      </a>
+      <nav class="nav" aria-label="Site">
+        <a class="nav-keep" href="/docs" aria-current="page">Docs</a>
+        <a class="nav-keep" href="/app">App</a>
+        <a href="https://github.com/kausthubh-coder/taru">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="wrap docs-layout">
+      <nav class="docs-nav" aria-label="Docs">
+        <ul><!--docs:nav--></ul>
+      </nav>
+      <main class="docs-main">
+        <article class="prose"><!--docs:content--></article>
+        <footer class="docs-page-foot">
+          <a href="<!--docs:markdown-->">View as Markdown</a>
+          <!--docs:next-->
+        </footer>
+      </main>
+    </div>
+
+    <footer class="wrap site-footer">
+      <p>
+        <svg viewBox="0 0 32 32" aria-labelledby="grid-title" role="img">
+                <title id="grid-title">The Taru mark drawn on a 32-unit grid</title>
+                <path class="grid-lines" d="M4 0V32M8 0V32M12 0V32M16 0V32M20 0V32M24 0V32M28 0V32M0 4H32M0 8H32M0 12H32M0 16H32M0 20H32M0 24H32M0 28H32" />
+                <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 3.5V21a6 6 0 0 0 6 6h5" />
+                  <path d="M5 12h6c6 0 9-2 10.5-6" />
+                </g>
+                <circle class="logo-node" cx="23.5" cy="6" r="4.25" />
+                <circle class="grid-guide" cx="23.5" cy="6" r="6.5" />
+              </svg>
+        Taru is Sanskrit for tree. Git history branches like one.
+      </p>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="/">Home</a>
+        <a href="/llms.txt">llms.txt</a>
+        <a href="https://github.com/kausthubh-coder/taru">GitHub</a>
+        <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a>
+      </nav>
+    </footer>
+  </body>
+</html>

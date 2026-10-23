@@ -175,7 +175,7 @@ async function diffTrees(repo: Repo, oldTree: Oid | null, newTree: Oid | null, p
 	if (oldTree === newTree) return true;
 	const oldEntries = new Map((oldTree ? await readTree(repo, oldTree) : []).map((e) => [sortKey(e), e]));
 	const newEntries = new Map((newTree ? await readTree(repo, newTree) : []).map((e) => [sortKey(e), e]));
-	const keys = [...new Set([...oldEntries.keys(), ...newEntries.keys()])].sort(compareBytes);
+	const keys = [...new Set([...oldEntries.keys(), ...newEntries.keys()])].toSorted(compareBytes);
 	for (const key of keys) {
 		const before = oldEntries.get(key) ?? null;
 		const after = newEntries.get(key) ?? null;

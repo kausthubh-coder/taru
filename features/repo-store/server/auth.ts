@@ -37,3 +37,10 @@ export function unauthorized(): Response {
 		headers: { "WWW-Authenticate": 'Basic realm="taru"', "Content-Type": "text/plain" },
 	});
 }
+
+/** GET /api/session: whether the request's Authorization header holds the admin token. The web app asks before it
+ *  saves a pasted token, so a typo shows up at once instead of at the first commit. */
+export async function handleSession(request: Request, env: Env): Promise<Response> {
+	if (request.method !== "GET") return Response.json({ error: "method not allowed" }, { status: 405 });
+	return Response.json({ admin: await isAdmin(request, env) }, { headers: { "Cache-Control": "no-store" } });
+}

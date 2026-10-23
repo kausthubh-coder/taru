@@ -1,0 +1,102 @@
+/* Docs pages (/docs/...). A reading surface: a quiet page list on the left, one column of prose at a readable
+   measure, code in panes. The HTML comes from features/docs/content through shared/markdown.ts. */
+
+@import "../../../shared/ui/theme.css";
+@import "../../../shared/ui/components.css";
+@import "../../../shared/ui/prose.css";
+
+.docs-layout {
+	display: grid;
+	grid-template-columns: 200px minmax(0, 1fr);
+	gap: var(--space-12);
+	padding-block: var(--space-8) var(--space-24);
+}
+
+.docs-nav ul {
+	position: sticky;
+	top: var(--space-6);
+	display: grid;
+	gap: var(--space-1);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-size: var(--text-small);
+}
+
+.docs-nav a {
+	display: block;
+	padding: var(--space-2) var(--space-3);
+	border-radius: var(--radius-control);
+	color: var(--text-muted);
+	text-decoration: none;
+}
+
+.docs-nav a[aria-current="page"] {
+	color: var(--text);
+	background: var(--fill);
+	font-weight: 600;
+}
+
+@media (hover: hover) {
+	.docs-nav a:hover {
+		color: var(--text);
+	}
+}
+
+@media (width < 860px) {
+	.docs-layout {
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-6);
+		padding-top: var(--space-4);
+	}
+
+	/* On a phone the page list is a row you scroll sideways, above the page. */
+	.docs-nav ul {
+		position: static;
+		display: flex;
+		gap: var(--space-1);
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		white-space: nowrap;
+	}
+}
+
+.docs-main {
+	min-width: 0;
+	max-width: 46rem;
+}
+
+.docs-page-foot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: end;
+	justify-content: space-between;
+	gap: var(--space-4);
+	margin-top: var(--space-16);
+	padding-top: var(--space-6);
+	border-top: 1px solid var(--line);
+	font-size: var(--text-small);
+	color: var(--text-muted);
+}
+
+.docs-page-foot > a:first-child {
+	padding-block: var(--space-3);
+}
+
+.docs-next {
+	display: grid;
+	gap: var(--space-1);
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid var(--line-input);
+	border-radius: var(--radius-control);
+	color: var(--text);
+	font-weight: 600;
+	text-decoration: none;
+	text-align: right;
+}
+
+@media (hover: hover) {
+	.docs-next:hover {
+		background: var(--fill);
+	}
+}

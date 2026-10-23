@@ -113,7 +113,7 @@ describe("readCommitChanges", () => {
 				}),
 			);
 			const numstat = git(source, "diff", "--numstat", parent ?? "4b825dc642cb6eb9a060e54bf8d69288fbee4904", oid);
-			expect(result.files.map((f) => (f.binary ? `-\t-\t${f.path}` : `${f.additions}\t${f.deletions}\t${f.path}`)).sort()).toEqual(numstat.split("\n").filter(Boolean).sort());
+			expect(result.files.map((f) => (f.binary ? `-\t-\t${f.path}` : `${f.additions}\t${f.deletions}\t${f.path}`)).toSorted()).toEqual(numstat.split("\n").filter(Boolean).toSorted());
 		}
 	});
 

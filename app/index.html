@@ -1,0 +1,25 @@
+<!doctype html>
+<!-- The web app shell. The Worker serves this file for /app and every path under it; features/app/ui/main.tsx
+     reads the path and renders the screen. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafaf7" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d0e0b" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="preload" href="/fonts/instrument-sans-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jetbrains-mono-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+    <title>Taru</title>
+    <meta name="description" content="Browse, edit and review the repos on this Taru server." />
+    <link rel="stylesheet" href="/features/app/ui/app.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/features/app/ui/main.tsx"></script>
+  </body>
+</html>

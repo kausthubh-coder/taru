@@ -16,10 +16,17 @@ export default defineConfig(({ mode }) => {
 			}),
 		],
 		server: { port, strictPort: true },
-		// Two static pages: the landing page at / and the brand kit at /brand/. Set on the client environment only;
-		// a top-level build input would also become an entry of the Worker build.
+		// HTML pages: the landing page at /, the brand kit at /brand/, the web app's shell at /app/ and the docs shell
+		// the Worker fills. Set on the client environment only; a top-level build input would also become an entry of
+		// the Worker build.
 		environments: {
-			client: { build: { rolldownOptions: { input: { main: "index.html", brand: "brand/index.html" } } } },
+			client: {
+				build: {
+					rolldownOptions: {
+						input: { main: "index.html", brand: "brand/index.html", app: "app/index.html", docs: "features/docs/ui/shell/index.html" },
+					},
+				},
+			},
 		},
 	};
 });
