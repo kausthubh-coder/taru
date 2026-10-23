@@ -67,7 +67,8 @@ describe("auth and validation", () => {
 		expect(noAuth.headers.get("WWW-Authenticate")).toBe('Basic realm="taru"');
 		expect(await noAuth.json()).toMatchObject({ error: "unauthorized" });
 		expect((await post(`${base}/merges`, { into: "main", from: "main" }, false)).status).toBe(401);
-		expect((await call(`${base}/commits`)).status).toBe(405);
+		expect((await call(`${base}/commits`)).status).toBe(200);
+		expect((await call(`${base}/commits`, { method: "PUT", headers: { Authorization: adminAuth() } })).status).toBe(405);
 		expect((await call(`${base}/tree`, { method: "POST", headers: { Authorization: adminAuth() } })).status).toBe(405);
 	});
 
@@ -292,5 +293,50 @@ describe("merging", () => {
 			{ path: "assets/logo.bin", kind: "binary", base: expect.any(String), ours: expect.any(String), theirs: expect.any(String) },
 		]);
 		expect((await (await call(`/api/repos/${OWNER}/merges`)).json<{ refs: Record<string, string> }>()).refs["refs/heads/main"]).toBe(main3.commit);
+	});
+});
+
+describe("history", () => {
+	beforeAll(applyRepoMigrations);
+
+	it("lists commits newest first, pages them, and shows what one changed", async () => {
+		const base = await createRepo("history");
+		const first = await seed(base);
+		const second = await (await post(`${base}/commits`, {
+			branch: "main",
+			expected_head: first,
+			message: "Edit util, drop the binary",
+			author: { name: "Agent", email: "agent@acme.dev" },
+			changes: [
+				{ path: "src/lib/util.ts", content: "export const add = (a: number, b: number) => a + b;\nexport const sub = (a: number, b: number) => a - b;\n" },
+				{ path: "assets/logo.bin", delete: true },
+			],
+		})).json<CommitBody>();
+
+		const log = await call(`${base}/commits?ref=main&limit=1`);
+		expect(log.status).toBe(200);
+		const page = await log.json<{ head: string; more: boolean; commits: { commit: string; parents: string[]; author: { name: string }; message: string }[] }>();
+		expect(page).toMatchObject({ head: second.commit, more: true });
+		expect(page.commits).toEqual([expect.objectContaining({ commit: second.commit, parents: [first], author: expect.objectContaining({ name: "Agent", email: "agent@acme.dev" }), message: "Edit util, drop the binary\n" })]);
+		const next = await (await call(`${base}/commits?limit=10&skip=1`)).json<{ more: boolean; commits: { commit: string }[] }>();
+		expect(next).toMatchObject({ more: false, commits: [{ commit: first }] });
+		expect(await (await call(`${base}/commits?limit=0`)).json()).toMatchObject({ error: "invalid_request" });
+
+		const shown = await call(`${base}/commits/${second.commit}`);
+		expect(shown.status).toBe(200);
+		const body = await shown.json<{ compared_to: string; files: Record<string, unknown>[] }>();
+		expect(body.compared_to).toBe(first);
+		expect(body.files).toEqual([
+			expect.objectContaining({ path: "assets/logo.bin", status: "deleted", binary: true, patch: null }),
+			expect.objectContaining({
+				path: "src/lib/util.ts",
+				status: "modified",
+				additions: 1,
+				deletions: 0,
+				patch: "@@ -1 +1,2 @@\n export const add = (a: number, b: number) => a + b;\n+export const sub = (a: number, b: number) => a - b;\n",
+			}),
+		]);
+		expect((await call(`${base}/commits/main`)).status).toBe(200);
+		expect(await (await call(`${base}/commits/nope`)).json()).toMatchObject({ error: "not_found" });
 	});
 });

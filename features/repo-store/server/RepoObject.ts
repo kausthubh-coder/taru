@@ -3,6 +3,7 @@
 
 import { DurableObject } from "cloudflare:workers";
 import type { RemoteError } from "../../git-core/client.ts";
+import { readCommitChanges, readLog, type ReadCommitOk, type ReadLogInput, type ReadLogOk } from "../../git-core/history.ts";
 import {
 	commitChanges,
 	mergeBranches,
@@ -365,6 +366,14 @@ export class RepoObject extends DurableObject<Env> implements Repo {
 
 	async agentMerge(input: MergeInput): Promise<MergeOk | OperationError> {
 		return mergeBranches(this, input);
+	}
+
+	async agentReadLog(input: ReadLogInput): Promise<ReadLogOk | OperationError> {
+		return readLog(this, input);
+	}
+
+	async agentReadCommit(rev: string): Promise<ReadCommitOk | OperationError> {
+		return readCommitChanges(this, rev);
 	}
 }
 

@@ -7,15 +7,15 @@
 import { isAdmin } from "../../repo-store/server/auth.ts";
 import { byteLimit, readAll } from "../../repo-store/server/body.ts";
 import { listRepos } from "../../repo-store/server/repos.ts";
-import { commit, merge, readFile, readTree, type ApiResult } from "./operations.ts";
-import { parseCommitRequest, parseMergeRequest, parseReadRequest } from "./requests.logic.ts";
+import { commit, merge, readCommit, readFile, readLog, readTree, type ApiResult } from "./operations.ts";
+import { parseCommitRequest, parseLogRequest, parseMergeRequest, parseReadRequest } from "./requests.logic.ts";
 import { MAX_AGENT_BODY } from "./routes.ts";
 
 export const MCP_PROTOCOL_VERSION = "2025-06-18";
 const SERVER_INFO = { name: "taru", version: "0.1.0" };
 
 const INSTRUCTIONS = `Taru is a Git server. These tools read and change repositories directly on the server: no clone, no checkout. Every change you commit shows up in git clone/pull and on GitHub.
-Workflow: list_repos -> read_tree / read_file at a ref -> commit_changes with expected_head set to the commit you read (the server refuses if the branch moved) -> merge_branches to land a branch.
+Workflow: list_repos -> read_tree / read_file at a ref -> commit_changes with expected_head set to the commit you read (the server refuses if the branch moved) -> read_log / read_commit to review -> merge_branches to land a branch.
 Repos are named "owner/name". Refs are branch names ("main"), tag names, full refs ("refs/heads/main") or 40-hex commit ids.`;
 
 const REPO = { type: "string", description: 'Repository as "owner/name".' };
@@ -52,6 +52,28 @@ export const TOOLS: Tool[] = [
 		name: "read_file",
 		description: "Read one file at a ref. Text files come back as content with encoding \"utf-8\"; binary files as base64 with encoding \"base64\". Also returns the commit id, mode, blob id and size.",
 		inputSchema: { type: "object", properties: { repo: REPO, ref: REF, path: { type: "string", description: 'File path like "src/app.ts".' } }, required: ["repo", "path"], additionalProperties: false },
+		write: false,
+	},
+	{
+		name: "read_log",
+		description: "List commits newest first, like git log: id, parents, author, committer (name, email, unix time, timezone) and message. Pages of up to 100; when more is true, ask again with skip increased by the number you got.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				repo: REPO,
+				ref: REF,
+				limit: { type: "integer", minimum: 1, maximum: 100, description: "Commits to return. Default 30." },
+				skip: { type: "integer", minimum: 0, description: "Commits to pass over first. Default 0." },
+			},
+			required: ["repo"],
+			additionalProperties: false,
+		},
+		write: false,
+	},
+	{
+		name: "read_commit",
+		description: "One commit and what it changed against its first parent, like git show: for each file its path, status (added, deleted, modified), old and new blob ids and modes, line counts, and a unified diff (patch) for text files. Use it to review work before merging.",
+		inputSchema: { type: "object", properties: { repo: REPO, rev: { type: "string", description: "Commit id, branch, tag or full ref." } }, required: ["repo", "rev"], additionalProperties: false },
 		write: false,
 	},
 	{
@@ -166,6 +188,15 @@ async function callTool(env: Env, origin: string, name: string, args: Record<str
 		const parsed = parseReadRequest(args.ref, args.path, { requirePath: name === "read_file" });
 		if (!parsed.ok) return toolError(parsed.message);
 		return toolResult(name === "read_tree" ? await readTree(env, repo.owner, repo.name, parsed.input) : await readFile(env, repo.owner, repo.name, parsed.input));
+	}
+	if (name === "read_log") {
+		const parsed = parseLogRequest(args.ref, args.limit, args.skip);
+		if (!parsed.ok) return toolError(parsed.message);
+		return toolResult(await readLog(env, repo.owner, repo.name, parsed.input));
+	}
+	if (name === "read_commit") {
+		if (typeof args.rev !== "string" || !args.rev) return toolError("rev must be a non-empty string");
+		return toolResult(await readCommit(env, repo.owner, repo.name, args.rev));
 	}
 	if (name === "commit_changes") {
 		const parsed = parseCommitRequest(args);

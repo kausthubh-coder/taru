@@ -1,6 +1,7 @@
 // The agent operations as the REST routes and the MCP tools both see them: look the repo up, run the
 // operation inside its RepoObject, and turn the result into a status and a JSON body.
 
+import type { ReadLogInput } from "../../git-core/history.ts";
 import type { CommitChangesInput, MergeInput, OperationError, ReadTreeInput } from "../../git-core/operations.ts";
 import { findRepo, repoKey } from "../../repo-store/server/repos.ts";
 
@@ -57,4 +58,14 @@ export async function commit(env: Env, owner: string, name: string, input: Commi
 export async function merge(env: Env, owner: string, name: string, input: MergeInput): Promise<ApiResult> {
 	const stub = await stubFor(env, owner, name);
 	return stub ? finish(await stub.agentMerge(input)) : noRepo(owner, name);
+}
+
+export async function readLog(env: Env, owner: string, name: string, input: ReadLogInput): Promise<ApiResult> {
+	const stub = await stubFor(env, owner, name);
+	return stub ? finish(await stub.agentReadLog(input)) : noRepo(owner, name);
+}
+
+export async function readCommit(env: Env, owner: string, name: string, rev: string): Promise<ApiResult> {
+	const stub = await stubFor(env, owner, name);
+	return stub ? finish(await stub.agentReadCommit(rev)) : noRepo(owner, name);
 }

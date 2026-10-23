@@ -2,6 +2,7 @@
 // the first thing wrong. Shared by the REST routes and the MCP tools, so both accept the same shapes.
 
 import type { Ident } from "../../git-core/commit.ts";
+import { MAX_LOG_LIMIT, type ReadLogInput } from "../../git-core/history.ts";
 import type { CommitChangesInput, MergeInput } from "../../git-core/operations.ts";
 import { isFileMode, pathProblem, type FileChange } from "../../git-core/tree.ts";
 
@@ -126,4 +127,14 @@ export function parseReadRequest(rev: unknown, path: unknown, options: { require
 	const problem = pathProblem(path);
 	if (problem) return { ok: false, message: `path ${problem}` };
 	return { ok: true, input: { rev: typeof rev === "string" ? rev : null, path: path as string } };
+}
+
+/** Log requests: ref like reads, limit 1 to MAX_LOG_LIMIT (default 30), skip 0 or more. Strings from a query or numbers from MCP. */
+export function parseLogRequest(rev: unknown, limit: unknown, skip: unknown): Parsed<ReadLogInput> {
+	if (rev !== undefined && rev !== null && (typeof rev !== "string" || !rev)) return { ok: false, message: "ref must be a non-empty string" };
+	const count = limit === undefined || limit === null || limit === "" ? 30 : Number(limit);
+	if (!Number.isInteger(count) || count < 1 || count > MAX_LOG_LIMIT) return { ok: false, message: `limit must be a whole number from 1 to ${MAX_LOG_LIMIT}` };
+	const offset = skip === undefined || skip === null || skip === "" ? 0 : Number(skip);
+	if (!Number.isInteger(offset) || offset < 0) return { ok: false, message: "skip must be a whole number, 0 or more" };
+	return { ok: true, input: { rev: typeof rev === "string" ? rev : null, limit: count, skip: offset } };
 }
