@@ -220,6 +220,15 @@ export function TreeScreen({ route }: { route: TreeRoute }) {
 	);
 }
 
+/** Where a README's relative links and images point: files in the same repo at the same ref. */
+function linkTarget(owner: string, name: string, refName: string, path: string) {
+	return {
+		dir: parentPath(path),
+		raw: (file: string) => `${repoPath(owner, name)}/raw${query({ ref: refName, path: file })}`,
+		page: (file: string) => hrefFor({ screen: "blob", owner, name, path: file, ref: refName }),
+	};
+}
+
 function Readme({ owner, name, refName, path }: { owner: string; name: string; refName: string; path: string }) {
 	const file = useApi<FileResult>(`${repoPath(owner, name)}/file${query({ ref: refName, path })}`);
 	if (file.state !== "ok" || file.data.encoding !== "utf-8") return null;
@@ -228,7 +237,7 @@ function Readme({ owner, name, refName, path }: { owner: string; name: string; r
 			<div className="box-head">
 				<span className="label">{path.split("/").pop()}</span>
 			</div>
-			<div className="readme-body">{isMarkdown(path) ? <Markdown source={file.data.content} /> : <pre className="plain-text">{file.data.content}</pre>}</div>
+			<div className="readme-body">{isMarkdown(path) ? <Markdown source={file.data.content} target={linkTarget(owner, name, refName, path)} /> : <pre className="plain-text">{file.data.content}</pre>}</div>
 		</section>
 	);
 }
@@ -275,7 +284,7 @@ export function BlobScreen({ route }: { route: BlobRoute }) {
 								) : null}
 							</span>
 						</div>
-						<FileBody path={path} file={data} view={markdown ? view : "code"} />
+						<FileBody path={path} file={data} view={markdown ? view : "code"} target={linkTarget(owner, name, refName, path)} />
 					</div>
 				)}
 			</Load>
@@ -288,13 +297,13 @@ function countLines(text: string): number {
 	return text.split("\n").length - (text.endsWith("\n") ? 1 : 0);
 }
 
-function FileBody({ path, file, view }: { path: string; file: FileResult; view: "preview" | "code" }) {
+function FileBody({ path, file, view, target }: { path: string; file: FileResult; view: "preview" | "code"; target: ReturnType<typeof linkTarget> }) {
 	if (file.encoding === "base64") {
 		const type = imageType(path);
 		if (type) return <div className="image-view"><img src={`data:${type};base64,${file.content}`} alt={path} /></div>;
 		return <p className="state-line">Binary file, {formatBytes(file.size)}. Clone the repo to open it.</p>;
 	}
-	if (view === "preview") return <div className="readme-body"><Markdown source={file.content} /></div>;
+	if (view === "preview") return <div className="readme-body"><Markdown source={file.content} target={target} /></div>;
 	if (!file.content) return <p className="state-line">Empty file.</p>;
 	const lines = file.content.endsWith("\n") ? file.content.slice(0, -1).split("\n") : file.content.split("\n");
 	return (

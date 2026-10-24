@@ -81,7 +81,28 @@ hooks in).
 - **MCP** (`features/agent-api/server/mcp.ts`): `POST /mcp`, Streamable HTTP, stateless JSON responses, no
   sessions or SSE. Hand-rolled JSON-RPC (initialize, ping, tools/list, tools/call, notifications) instead of
   the SDK's transport, which is built around sessions and streams. Tools: `list_repos`, `read_tree`,
-  `read_file`, `commit_changes`, `merge_branches`.
+  `read_file`, `read_log`, `read_commit`, `commit_changes`, `merge_branches`.
+- **History** (`features/git-core/history.ts`): `GET .../commits` walks parents newest committer date first, like
+  `git log` (equal dates keep the order reached), paged with `limit`/`skip`. `GET .../commits/<rev>` diffs a commit
+  against its first parent, like GitHub: a recursive tree diff in git's tree order, then a Myers line diff per text
+  file as unified hunks with three lines of context. Binary files (a NUL in the first 8000 bytes) and files over
+  1 MiB get no patch; the list stops at 300 files and patches at 2 MiB per commit. The Node tests check order,
+  files, `--numstat` counts and that `git apply` of the patches rebuilds the commit's tree. On a big rewrite the
+  counts can differ from git's by a line or two: git's xdiff skips very common lines (`};`, blank lines) when
+  matching, ours finds the longest match. Both patches apply and rebuild the same file (checked on chalk/chalk).
+
+## Web app, docs and llms.txt
+
+- **The app** (`features/app/ui/`) is a React SPA over the same public API agents use; the Worker serves its shell
+  for every `/app` path (`run_worker_first`), and it routes in the browser with `pushState`. Refs go in `?ref=`
+  because branch names have slashes. Writes use the admin token pasted into the browser (localStorage, checked
+  with `GET /api/session`) until accounts exist.
+- **Docs** are Markdown in `features/docs/content/`, rendered on request by the Worker into an HTML shell built by
+  Vite (fetched through the `ASSETS` binding, so its hashed CSS link is right in dev and production). The same
+  files are served as `.md`, indexed in `/llms.txt` and joined in `/llms-full.txt`, so the human and agent docs
+  can't drift. `{{origin}}` becomes the URL the reader reached the server on.
+- **One Markdown renderer** (`shared/markdown.ts`, marked) for docs and READMEs: raw HTML is escaped and only
+  http(s), mailto and relative URLs survive, because a README in the app is untrusted input.
 - **Commits are compare-and-swap.** Every commit carries `expected_head`, the branch's current commit (or
   `null` to create the branch). A stale head is a 409 with the current one: the agent reads again and retries.
   No "last write wins", no lock. The server builds the blobs, trees and commit itself; a 100755 or symlink
@@ -124,5 +145,6 @@ still in beta. When `cf` supports tests, migrating is `cf migrate`.
 1. Core: create a repo, `git push` / `git clone`, import from GitHub, automatic copy to GitHub.
 2. Agent API and MCP server: read, edit, commit and merge without a clone.
 3. Private folders and secrets.
-4. Review web app.
+4. Review web app. A first version is at `/app`: browse, history, diffs, edit and commit, the GitHub copy.
+   Still to come: comments, review requests, side-by-side diffs.
 5. CLI: auto-snapshots, instant agent workspaces.

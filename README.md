@@ -15,8 +15,17 @@ Taru runs on Cloudflare (Workers, Durable Objects, R2, D1). You can run your own
 account: it's free while you try it, and about $5 a month once it's in real use.
 
 > Early. Today: create a repo, `git push` and `git clone` over HTTPS, import from GitHub, the automatic GitHub
-> copy, and the agent API and MCP server. Import and the copy stop at 48 MiB of Git objects. For now anyone who can
-> reach the server can list, read and clone every repo, so use it for public code.
+> copy, the agent API and MCP server, and a web app to browse, review and edit. Import and the copy stop at 48 MiB
+> of Git objects. For now anyone who can reach the server can list, read and clone every repo, so use it for
+> public code.
+
+## Use it
+
+- **Docs**: `/docs` on any Taru server, starting with the quickstart. The same pages are Markdown in
+  [features/docs/content](features/docs/content).
+- **Web app**: `/app`.
+- **For agents**: `/llms.txt` and `/llms-full.txt`, the MCP server at `/mcp`, and a skill:
+  `npx skills add kausthubh-coder/taru` ([skills/taru/SKILL.md](skills/taru/SKILL.md)).
 
 Brand, logo files and design tokens: `/brand/` on a running instance, and `shared/ui/theme.css`.
 

@@ -140,7 +140,18 @@ export async function readTreeAt(repo: Repo, input: ReadTreeInput): Promise<Read
 	return { ok: true, ref: revision.ref, commit: revision.commit, tree, path: input.path, entries };
 }
 
-export async function readFileAt(repo: Repo, input: ReadTreeInput): Promise<ReadFileOk | OperationError> {
+export interface ReadBlobOk {
+	ok: true;
+	ref: string | null;
+	commit: Oid;
+	type: EntryType;
+	mode: string;
+	oid: Oid;
+	data: Uint8Array;
+}
+
+/** A file's bytes at a revision. readFileAt and the raw endpoint both read through this. */
+export async function readBlobAt(repo: Repo, input: ReadTreeInput): Promise<ReadBlobOk | OperationError> {
 	const revision = await resolveOrHead(repo, input.rev);
 	if (!revision) return notFound(`revision ${JSON.stringify(input.rev ?? "HEAD")} not found`);
 	const entry = await readPath(repo, revision.tree, input.path);
@@ -148,18 +159,24 @@ export async function readFileAt(repo: Repo, input: ReadTreeInput): Promise<Read
 	if (entry.mode === TREE_MODE) return notFound(`path ${JSON.stringify(input.path)} is a folder, not a file`);
 	const object = await repo.getObject(entry.oid);
 	if (!object) throw new Error(`missing blob ${entry.oid}`);
-	const text = asText(object.data);
+	return { ok: true, ref: revision.ref, commit: revision.commit, type: entryType(entry.mode), mode: entry.mode, oid: entry.oid, data: object.data };
+}
+
+export async function readFileAt(repo: Repo, input: ReadTreeInput): Promise<ReadFileOk | OperationError> {
+	const blob = await readBlobAt(repo, input);
+	if (!blob.ok) return blob;
+	const text = asText(blob.data);
 	return {
 		ok: true,
-		ref: revision.ref,
-		commit: revision.commit,
+		ref: blob.ref,
+		commit: blob.commit,
 		path: input.path,
-		type: entryType(entry.mode),
-		mode: entry.mode,
-		oid: entry.oid,
-		size: object.data.byteLength,
+		type: blob.type,
+		mode: blob.mode,
+		oid: blob.oid,
+		size: blob.data.byteLength,
 		encoding: text === null ? "base64" : "utf-8",
-		content: text ?? base64(object.data),
+		content: text ?? base64(blob.data),
 	};
 }
 

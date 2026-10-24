@@ -14,14 +14,17 @@ body {
 }
 
 .measure {
-	max-width: 62ch;
+	max-width: var(--measure);
 }
 
 .skip-link {
 	position: absolute;
 	left: var(--space-4);
 	top: -100px;
-	padding: var(--space-2) var(--space-3);
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	padding: 0 var(--space-3);
 	background: var(--surface);
 	border-radius: var(--radius-control);
 }
@@ -43,6 +46,11 @@ body {
 	min-height: 56px;
 }
 
+.app-header .logo {
+	min-width: 44px;
+	justify-content: center;
+}
+
 .app-header .logo svg {
 	height: 28px;
 }
@@ -54,6 +62,8 @@ body {
 }
 
 .app-nav a {
+	min-width: 44px;
+	text-align: center;
 	padding-block: var(--space-3);
 	color: var(--text-muted);
 	text-decoration: none;
@@ -154,6 +164,7 @@ h2 {
 }
 
 .empty p {
+	max-width: var(--measure);
 	color: var(--text-muted);
 }
 
@@ -228,6 +239,10 @@ h2 {
 }
 
 code.row-meta {
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 	font-family: var(--font-mono);
 }
 
@@ -380,11 +395,14 @@ code.row-meta {
 	max-width: 100%;
 }
 
+/* The clone URL is reference, not the point of the screen: plain muted mono, no chip. */
 .clone code {
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	padding: 0;
+	background: none;
 	font-size: var(--text-caption);
 	color: var(--text-muted);
 }
@@ -481,7 +499,7 @@ code.row-meta {
 
 .breadcrumb a {
 	text-decoration: none;
-	color: var(--accent-text);
+	color: var(--text-muted);
 }
 
 @media (hover: hover) {
@@ -841,6 +859,46 @@ code.row-meta {
 
 .settings {
 	max-width: 46rem;
+}
+
+/* Phones: every target at least 44px. Row links grow their hit area without moving the text. */
+@media (width <= 640px) {
+	.button-small,
+	.ref-picker select,
+	.app-main .button {
+		min-height: 44px;
+	}
+
+	.tabs a {
+		min-width: 44px;
+		justify-content: center;
+	}
+
+	a.row-title,
+	.breadcrumb a,
+	.latest-message {
+		display: inline-block;
+		padding-block: 11px;
+		margin-block: -11px;
+	}
+
+	/* 16px or more, or iOS zooms the page when the picker opens. */
+	.ref-picker select {
+		font-size: 16px;
+	}
+
+	a.sha-chip {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		min-width: 44px;
+		justify-content: center;
+		margin-block: -10px;
+	}
+
+	.file-row {
+		min-height: 44px;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {

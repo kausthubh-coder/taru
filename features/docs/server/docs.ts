@@ -110,14 +110,15 @@ export function renderDocPage(shell: string, current: DocPage, origin: string): 
 	const next = DOC_PAGES[position + 1];
 	const pager = next ? `<a class="docs-next" href="/docs/${next.slug}"><span class="label">Next</span>${escapeHtml(next.title)}</a>` : "";
 	const title = current.slug ? `${current.title}: Taru docs` : "Taru docs";
-	// Replacer functions, so a "$&" or "$'" in the content is inserted as written.
+	// Every marker, everywhere it appears (the Markdown link is in the head and the page foot). Replacer functions,
+	// so a "$&" or "$'" in the content is inserted as written.
 	return shell
-		.replace("<!--docs:title-->", () => escapeHtml(title))
-		.replace("<!--docs:description-->", () => escapeHtml(withOrigin(current.summary, origin).replaceAll("`", "")))
-		.replace("<!--docs:nav-->", () => sidebar(current))
-		.replace("<!--docs:content-->", () => renderMarkdown(withOrigin(current.source, origin)))
-		.replace("<!--docs:markdown-->", () => pageUrl("", current.slug, ".md"))
-		.replace("<!--docs:next-->", () => pager);
+		.replaceAll("<!--docs:title-->", () => escapeHtml(title))
+		.replaceAll("<!--docs:description-->", () => escapeHtml(withOrigin(current.summary, origin).replaceAll("`", "")))
+		.replaceAll("<!--docs:nav-->", () => sidebar(current))
+		.replaceAll("<!--docs:content-->", () => renderMarkdown(withOrigin(current.source, origin)))
+		.replaceAll("<!--docs:markdown-->", () => pageUrl("", current.slug, ".md"))
+		.replaceAll("<!--docs:next-->", () => pager);
 }
 
 export async function handleDocs(request: Request, env: Env): Promise<Response> {

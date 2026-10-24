@@ -5,6 +5,13 @@
 	margin-top: var(--space-4);
 }
 
+/* Text at the reading measure; code, tables and images may use the full column. */
+.prose p,
+.prose li,
+.prose blockquote {
+	max-width: var(--measure);
+}
+
 .prose h1 {
 	font-size: var(--text-h2);
 	line-height: var(--leading-heading);
@@ -84,7 +91,19 @@
 	font-weight: 600;
 }
 
+/* Digits line up in tables: sizes, limits, status codes. A Markdown column marked --: is end-aligned. */
+.prose table {
+	font-variant-numeric: tabular-nums;
+}
+
+.prose [align="right"] {
+	text-align: right;
+}
+
+/* Inline, as in Markdown: badge rows stay in a row, and a README's align="center" can center its logo. */
 .prose img {
+	display: inline;
 	max-width: 100%;
 	height: auto;
+	vertical-align: middle;
 }

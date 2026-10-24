@@ -2,8 +2,8 @@
 // loading and error states, and Markdown.
 
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
-import { renderMarkdown } from "../../../shared/markdown.ts";
 import { navigate, type Loaded } from "./navigation.ts";
+import { readmeHtml, type LinkTarget } from "./sanitize.ts";
 
 export function Link({ href, children, className, ...rest }: { href: string; children: ReactNode; className?: string; "aria-current"?: "page" | undefined; title?: string }) {
 	function onClick(event: MouseEvent<HTMLAnchorElement>) {
@@ -131,8 +131,8 @@ export function Load<T>({ loaded, children, notFound }: { loaded: Loaded<T> & { 
 	return <>{children(loaded.data)}</>;
 }
 
-/** Markdown from a repo, through the safe renderer: raw HTML shows as text, unsafe links as plain text. */
-export function Markdown({ source }: { source: string }) {
-	// The renderer escapes raw HTML and drops script URLs, which is what makes this safe to inject.
-	return <div className="prose" dangerouslySetInnerHTML={{ __html: renderMarkdown(source) }} />;
+/** Markdown from a repo. readmeHtml keeps GitHub's safe subset of HTML and drops the rest. */
+export function Markdown({ source, target }: { source: string; target: LinkTarget }) {
+	// Safe to inject: readmeHtml rebuilt this from an allowlist of tags, attributes and URL schemes.
+	return <div className="prose" dangerouslySetInnerHTML={{ __html: readmeHtml(source, target) }} />;
 }

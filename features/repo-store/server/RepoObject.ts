@@ -7,6 +7,7 @@ import { readCommitChanges, readLog, type ReadCommitOk, type ReadLogInput, type 
 import {
 	commitChanges,
 	mergeBranches,
+	readBlobAt,
 	readFileAt,
 	readTreeAt,
 	type CommitChangesInput,
@@ -14,6 +15,7 @@ import {
 	type MergeInput,
 	type MergeOk,
 	type OperationError,
+	type ReadBlobOk,
 	type ReadFileOk,
 	type ReadTreeInput,
 	type ReadTreeOk,
@@ -358,6 +360,10 @@ export class RepoObject extends DurableObject<Env> implements Repo {
 
 	async agentReadFile(input: ReadTreeInput): Promise<ReadFileOk | OperationError> {
 		return readFileAt(this, input);
+	}
+
+	async agentReadBlob(input: ReadTreeInput): Promise<ReadBlobOk | OperationError> {
+		return readBlobAt(this, input);
 	}
 
 	async agentCommit(input: CommitChangesInput): Promise<CommitChangesOk | OperationError> {

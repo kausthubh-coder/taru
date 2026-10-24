@@ -1,4 +1,4 @@
-# REST API
+# API reference
 
 Every endpoint, with its request and response. All bodies are JSON. Reads are public; writes need the admin token as HTTP Basic auth (`curl -u "x:$TARU_TOKEN"`).
 
@@ -65,6 +65,10 @@ One file. `encoding` is `utf-8` for text, or `base64` when the bytes aren't vali
 ```json
 { "ref": "refs/heads/main", "commit": "7f3c2a1e...", "path": "src/app.ts", "type": "file", "mode": "100644", "oid": "...", "size": 1234, "encoding": "utf-8", "content": "..." }
 ```
+
+### `GET /api/repos/:owner/:name/raw?ref=main&path=media/logo.png`
+
+The file's bytes, for images and downloads. Images come back with their image type, other files as `text/plain` or `application/octet-stream`. The response is sandboxed so a file can never run as a page.
 
 ## History
 
@@ -159,12 +163,12 @@ On a conflict nothing is written, and the answer is `409`:
 
 Reading, history and writing endpoints answer errors as `{"error": "<code>", "message": "..."}`, so an agent can branch on the code:
 
-| Status | `error` | Meaning |
-|---|---|---|
-| 400 | `invalid_request` | The body or query is wrong; `message` names what |
-| 401 | `unauthorized` | A write without the admin token |
-| 404 | `not_found` | No such repo, revision or path |
-| 409 | `head_mismatch` | The branch isn't at `expected_head`; `head` is where it is |
-| 409 | `merge_conflict` | See above |
-| 409 | `no_merge_base` | The two branches share no history |
-| 413 | `too_large` | The body is over 16 MiB |
+| `error` | Status | Meaning |
+|---|--:|---|
+| `invalid_request` | 400 | The body or query is wrong; `message` names what |
+| `unauthorized` | 401 | A write without the admin token |
+| `not_found` | 404 | No such repo, revision or path |
+| `head_mismatch` | 409 | The branch isn't at `expected_head`; `head` is where it is |
+| `merge_conflict` | 409 | See above |
+| `no_merge_base` | 409 | The two branches share no history |
+| `too_large` | 413 | The body is over 16 MiB |

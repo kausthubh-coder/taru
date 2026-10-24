@@ -12,7 +12,7 @@ Next: sign in with GitHub, per-repo access, and a token per agent. After that, p
 ## Size
 
 | Limit | Value | Why |
-|---|---|---|
+|---|--:|---|
 | One `git push` | 100 MB | The Workers request limit |
 | Import and the GitHub copy | 48 MiB of Git objects | Both hold everything they move in memory, in a Durable Object with 128 MB |
 | One API request | 16 MiB | Keeps a commit well inside one request to the repo's Durable Object |

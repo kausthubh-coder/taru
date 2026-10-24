@@ -23,6 +23,7 @@ node .agents/skills/verify-taru/verify.mjs <command>
 | `mirror` | Starts a fake GitHub (`scripts/fake-github.mjs`, real `git http-backend`, stopped by PID at the end), creates a repo with its mirror URL set, pushes with real `git`, waits for the copy's status to say `ok`, and compares the bare copy with Taru's refs and a clone; then an incremental push with a new branch, then a branch delete |
 | `agent-api` | Pushes a real-shaped repo with git, commits through the agent REST API (nested edit, binary, delete, new folder, executable), `git pull`s and compares every byte, checks the CAS 409, merges a branch (three-way) and a conflicting one (409 report), then interleaves a `git push` and an API commit |
 | `mcp` | Same proof through `/mcp`: raw JSON-RPC `initialize` and `tools/list`, then the official SDK client calls `read_file` and `commit_changes`, and `git pull` shows the edit |
+| `app-e2e` | Not a verify.mjs command: `node .agents/skills/verify-taru/app-e2e.mjs` drives the web app in Chromium (README safety, admin token, edit and new-file commits checked with `git clone`, the moved-branch notice, the diff view). See `features/web-app.md` |
 | `stop` | Kills the process tree we started (by recorded PID), deletes `.verify/state`, keeps the evidence |
 
 ## Launch

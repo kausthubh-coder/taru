@@ -25,7 +25,8 @@
 
 .docs-nav a {
 	display: block;
-	padding: var(--space-2) var(--space-3);
+	/* 11px + 22px of text + 11px: a 44px target. */
+	padding: 11px var(--space-3);
 	border-radius: var(--radius-control);
 	color: var(--text-muted);
 	text-decoration: none;

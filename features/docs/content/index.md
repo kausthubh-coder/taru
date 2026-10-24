@@ -20,7 +20,7 @@ There are no accounts yet. Anyone who can reach the server can list, read and cl
 - [Quickstart](/docs/quickstart): a repo, a push, an agent commit and the GitHub copy in five minutes.
 - [Git](/docs/git): clone and push, auth, what the server supports.
 - [Agents and MCP](/docs/agents): connect Claude Code, Codex, Cursor or any MCP client, install the Taru skill, and the tools.
-- [REST API](/docs/api): every endpoint, with request and response shapes and error codes.
+- [API reference](/docs/api): every endpoint, with request and response shapes and error codes.
 - [GitHub import and copy](/docs/github): bring a repo in, and keep GitHub up to date.
 - [Run your own](/docs/self-host): deploy Taru to your Cloudflare account.
 - [Limits](/docs/limits): what doesn't work yet, and what's next.

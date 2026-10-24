@@ -25,14 +25,14 @@ url = "{{origin}}/mcp"
 env_http_headers = { "Authorization" = "TARU_AUTH" }
 ```
 
-**Cursor** (`.cursor/mcp.json`)
+**Cursor** (`.cursor/mcp.json`; Cursor fills `${env:TARU_AUTH}` from the environment)
 
 ```json
 {
   "mcpServers": {
     "taru": {
       "url": "{{origin}}/mcp",
-      "headers": { "Authorization": "Basic <base64 of x:token>" }
+      "headers": { "Authorization": "${env:TARU_AUTH}" }
     }
   }
 }
@@ -83,7 +83,7 @@ Every commit reaches git and GitHub on its own. Docs: {{origin}}/llms.txt
 | `commit_changes` | Writes, deletes and new files as one commit, if the branch is still at `expected_head` | yes |
 | `merge_branches` | Fast-forward or three-way merge on the server; a conflict writes nothing and returns a report | yes |
 
-Refs can be a branch (`main`), a tag, a full ref (`refs/heads/main`) or a 40-character commit id. The [REST API](/docs/api) runs the same operations with the same inputs and errors.
+Refs can be a branch (`main`), a tag, a full ref (`refs/heads/main`) or a 40-character commit id. The [API reference](/docs/api) runs the same operations with the same inputs and errors.
 
 ## How a good agent session goes
 

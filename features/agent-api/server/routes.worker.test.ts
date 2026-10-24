@@ -337,6 +337,19 @@ describe("history", () => {
 			}),
 		]);
 		expect((await call(`${base}/commits/main`)).status).toBe(200);
+
+		const raw = await call(`${base}/raw?ref=${first}&path=assets/logo.bin`);
+		expect(raw.status).toBe(200);
+		expect(new Uint8Array(await raw.arrayBuffer())).toEqual(new TextEncoder().encode("\0\x01\x02binary"));
+		expect(raw.headers.get("Content-Type")).toBe("application/octet-stream");
+		expect(raw.headers.get("X-Content-Type-Options")).toBe("nosniff");
+		expect(raw.headers.get("Content-Security-Policy")).toContain("sandbox");
+		expect(raw.headers.get("Cache-Control")).toContain("immutable");
+		const text = await call(`${base}/raw?path=src/lib/util.ts`);
+		expect(text.headers.get("Content-Type")).toBe("text/plain; charset=utf-8");
+		expect(await text.text()).toContain("export const sub");
+		expect((await call(`${base}/raw?path=nope.txt`)).status).toBe(404);
+		expect((await call(`${base}/raw`)).status).toBe(400);
 		expect(await (await call(`${base}/commits/nope`)).json()).toMatchObject({ error: "not_found" });
 	});
 });
