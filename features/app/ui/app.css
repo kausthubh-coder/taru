@@ -1,0 +1,911 @@
+/* The web app (/app). An operate surface, used often: compact (15px text), quiet, hairlines and fills instead of
+   boxes in boxes. Lime only on the one next action per screen (New repo, Commit, Turn on the copy). */
+
+@import "../../../shared/ui/theme.css";
+@import "../../../shared/ui/components.css";
+@import "../../../shared/ui/prose.css";
+
+body {
+	font-size: var(--text-small);
+}
+
+.muted {
+	color: var(--text-muted);
+}
+
+.measure {
+	max-width: var(--measure);
+}
+
+.skip-link {
+	position: absolute;
+	left: var(--space-4);
+	top: calc(-1 * var(--space-24));
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--target);
+	padding: 0 var(--space-3);
+	background: var(--surface);
+	border-radius: var(--radius-control);
+}
+
+.skip-link:focus {
+	top: var(--space-2);
+}
+
+/* Header */
+
+.app-header {
+	border-bottom: var(--stroke) solid var(--line);
+}
+
+.app-header-row {
+	display: flex;
+	align-items: center;
+	gap: var(--space-6);
+	min-height: var(--row);
+}
+
+.app-header .logo {
+	min-width: var(--target);
+	justify-content: center;
+}
+
+.app-header .logo svg {
+	height: var(--logo);
+}
+
+.app-nav {
+	display: flex;
+	gap: var(--space-4);
+	margin-right: auto;
+}
+
+.app-nav a {
+	min-width: var(--target);
+	text-align: center;
+	padding-block: var(--space-3);
+	color: var(--text-muted);
+	text-decoration: none;
+}
+
+.app-nav a[aria-current="page"] {
+	color: var(--text);
+	font-weight: 600;
+}
+
+@media (hover: hover) {
+	.app-nav a:hover {
+		color: var(--text);
+	}
+}
+
+.token-state {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.app-main {
+	padding-block: var(--space-8) var(--space-24);
+}
+
+/* Small buttons: the quiet control for actions inside a screen. --control-small tall, --target of hit area with the gap. */
+
+.button-small {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2);
+	min-height: var(--control-small);
+	padding: 0 var(--space-3);
+	font: inherit;
+	font-size: var(--text-small);
+	font-weight: 500;
+	color: var(--text);
+	background: var(--surface);
+	border: var(--stroke) solid var(--line-input);
+	border-radius: var(--radius-control);
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: transform var(--duration-press) var(--ease-out);
+}
+
+@media (hover: hover) {
+	.button-small:hover {
+		background: var(--fill);
+	}
+}
+
+.button-small:active {
+	transform: scale(0.97);
+}
+
+.button-small:disabled {
+	cursor: progress;
+	color: var(--text-muted);
+}
+
+/* The app's lime button is a size down from the landing page's. */
+.app-main .button {
+	min-height: var(--control-compact);
+	padding: 0 var(--space-4);
+	font-size: var(--text-small);
+}
+
+/* Page heads and empty states */
+
+.page-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-4);
+	margin-bottom: var(--space-6);
+}
+
+h1 {
+	font-size: var(--text-h3);
+	line-height: var(--leading-heading);
+	letter-spacing: var(--tracking-heading);
+}
+
+h2 {
+	font-size: var(--text-body);
+	line-height: var(--leading-heading);
+}
+
+.empty {
+	display: grid;
+	justify-items: start;
+	gap: var(--space-3);
+	max-width: var(--width-form);
+	padding-block: var(--space-12);
+}
+
+.empty p {
+	max-width: var(--measure);
+	color: var(--text-muted);
+}
+
+.empty .button,
+.empty .row-start {
+	margin-top: var(--space-2);
+}
+
+.state-line {
+	padding: var(--space-6) var(--space-4);
+	color: var(--text-muted);
+}
+
+.notice {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-control);
+	background: var(--fill);
+}
+
+.notice-error {
+	border-left: var(--stroke-alert) solid var(--danger);
+}
+
+.error-text {
+	color: var(--danger);
+}
+
+/* Lists of rows: repos and commits. Hairlines between rows, no box around each. */
+
+.rows {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-top: var(--stroke) solid var(--line);
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2) var(--space-6);
+	min-height: var(--row);
+	padding: var(--space-3) 0;
+	border-bottom: var(--stroke) solid var(--line);
+}
+
+.repo-row {
+	flex-wrap: wrap;
+}
+
+.row-title {
+	font-weight: 600;
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+
+@media (hover: hover) {
+	a.row-title:hover {
+		text-decoration: underline;
+	}
+}
+
+.row-meta {
+	color: var(--text-muted);
+	font-size: var(--text-caption);
+	overflow-wrap: anywhere;
+}
+
+code.row-meta {
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: var(--font-mono);
+}
+
+.commit-main {
+	display: grid;
+	gap: var(--space-1);
+	min-width: 0;
+}
+
+.sha-chip {
+	flex: none;
+	padding: var(--pad-chip);
+	border-radius: var(--radius-chip);
+	background: var(--fill);
+	color: var(--text);
+	font-family: var(--font-mono);
+	font-size: var(--text-caption);
+	font-weight: 500;
+	text-decoration: none;
+}
+
+@media (hover: hover) {
+	a.sha-chip:hover {
+		background: var(--line);
+	}
+}
+
+.pager {
+	display: flex;
+	justify-content: space-between;
+	margin-top: var(--space-6);
+}
+
+/* Forms */
+
+.stack {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.form-page {
+	max-width: var(--width-form);
+}
+
+.field {
+	display: grid;
+	gap: var(--space-2);
+	min-width: 0;
+}
+
+.field > span {
+	font-weight: 600;
+}
+
+.field-row {
+	display: flex;
+	align-items: end;
+	gap: var(--space-3);
+}
+
+.field-row .field {
+	flex: 1;
+}
+
+.field-slash {
+	padding-bottom: var(--space-3);
+	font-size: var(--text-h3);
+	color: var(--text-muted);
+}
+
+.hint {
+	margin-top: calc(-1 * var(--space-2));
+	font-size: var(--text-caption);
+	color: var(--text-muted);
+}
+
+.field-error {
+	/* One line, so the form doesn't jump when an error appears. */
+	min-height: 1lh;
+	color: var(--danger);
+}
+
+.app-main .input,
+.dialog .input {
+	min-height: var(--control-compact);
+	font-size: max(var(--text-input-min), var(--text-small));
+}
+
+.input-mono {
+	font-family: var(--font-mono);
+}
+
+.input[readonly] {
+	background: var(--fill);
+}
+
+.row-end,
+.row-start {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+}
+
+.row-end {
+	justify-content: flex-end;
+}
+
+/* Dialog: the admin token. */
+
+.dialog {
+	width: min(100% - 2 * var(--gutter), var(--width-dialog));
+	padding: var(--space-6);
+	color: var(--text);
+	background: var(--surface);
+	border: var(--stroke) solid var(--line);
+	border-radius: var(--radius-card);
+}
+
+.dialog::backdrop {
+	background: color-mix(in oklch, var(--surface-sunken) 85%, transparent);
+}
+
+.dialog h2 {
+	font-size: var(--text-h3);
+}
+
+/* Repo header and tabs */
+
+.repo-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-4);
+}
+
+.repo-title {
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.repo-title a {
+	text-decoration: none;
+}
+
+.clone {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-width: 0;
+	max-width: 100%;
+}
+
+/* The clone URL is reference, not the point of the screen: plain muted mono, no chip. */
+.clone code {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	padding: 0;
+	background: none;
+	font-size: var(--text-caption);
+	color: var(--text-muted);
+}
+
+.tabs {
+	display: flex;
+	gap: var(--space-6);
+	margin-block: var(--space-6);
+	border-bottom: var(--stroke) solid var(--line);
+}
+
+.tabs a {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding-block: var(--space-3);
+	margin-bottom: calc(-1 * var(--stroke));
+	border-bottom: var(--stroke-current) solid transparent;
+	color: var(--text-muted);
+	text-decoration: none;
+}
+
+.tabs a[aria-current="page"] {
+	color: var(--text);
+	font-weight: 600;
+	border-bottom-color: var(--text);
+}
+
+@media (hover: hover) {
+	.tabs a:hover {
+		color: var(--text);
+	}
+}
+
+/* Status dots for the GitHub copy: color plus the words beside them. */
+
+.dot {
+	display: inline-block;
+	width: var(--dot);
+	height: var(--dot);
+	border-radius: 50%;
+	background: var(--text-faint);
+}
+
+.dot-ok {
+	background: var(--success);
+}
+
+.dot-failed {
+	background: var(--danger);
+}
+
+.dot-pending {
+	background: transparent;
+	box-shadow: inset 0 0 0 var(--stroke-ring) var(--text-muted);
+}
+
+/* Toolbar above files and history */
+
+.toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3) var(--space-4);
+	margin-bottom: var(--space-4);
+}
+
+.toolbar-end {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	margin-left: auto;
+}
+
+.ref-picker select {
+	min-height: var(--control-small);
+	max-width: var(--width-picker);
+	padding: 0 var(--space-3);
+	font: inherit;
+	font-family: var(--font-mono);
+	font-size: var(--text-caption);
+	color: var(--text);
+	background: var(--surface);
+	border: var(--stroke) solid var(--line-input);
+	border-radius: var(--radius-control);
+}
+
+.breadcrumb {
+	min-width: 0;
+	font-family: var(--font-mono);
+	font-size: var(--text-caption);
+	overflow-wrap: anywhere;
+}
+
+.breadcrumb a {
+	text-decoration: none;
+	color: var(--text-muted);
+}
+
+@media (hover: hover) {
+	.breadcrumb a:hover {
+		text-decoration: underline;
+	}
+}
+
+.breadcrumb [aria-current="page"] {
+	font-weight: 600;
+}
+
+/* A box: one hairline frame around a list or a file, with a head row on a fill. */
+
+.box {
+	border: var(--stroke) solid var(--line);
+	border-radius: var(--radius-card);
+	background: var(--surface);
+	overflow: hidden;
+}
+
+.box + .box {
+	margin-top: var(--space-6);
+}
+
+.box-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2) var(--space-3);
+	min-height: var(--control);
+	padding: var(--space-2) var(--space-4);
+	background: var(--surface-sunken);
+	border-bottom: var(--stroke) solid var(--line);
+}
+
+.latest {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-height: var(--control);
+	padding: var(--space-2) var(--space-4);
+	background: var(--surface-sunken);
+	border-bottom: var(--stroke) solid var(--line);
+	color: var(--text-muted);
+}
+
+.latest-author {
+	color: var(--text);
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.latest-message {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--text-muted);
+	text-decoration: none;
+}
+
+.latest-meta {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin-left: auto;
+	white-space: nowrap;
+	font-size: var(--text-caption);
+}
+
+@media (width < 640px) {
+	.latest-author {
+		display: none;
+	}
+}
+
+.files {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.files li + li {
+	border-top: var(--stroke) solid var(--line);
+}
+
+.file-row {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-height: var(--control-compact);
+	padding: var(--space-2) var(--space-4);
+	text-decoration: none;
+}
+
+@media (hover: hover) {
+	.file-row:hover {
+		background: var(--fill);
+	}
+
+	.file-row:hover .file-name {
+		text-decoration: underline;
+	}
+}
+
+.file-name {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.icon {
+	flex: none;
+	width: var(--icon);
+	height: var(--icon);
+	color: var(--text-muted);
+}
+
+.readme-body {
+	padding: var(--space-6) var(--space-6) var(--space-8);
+	font-size: var(--text-body);
+}
+
+.readme-body .prose {
+	max-width: var(--width-prose);
+}
+
+.plain-text {
+	white-space: pre-wrap;
+	font-size: var(--text-code);
+}
+
+.code-block {
+	padding: var(--space-4);
+	max-width: 100%;
+	overflow-x: auto;
+	font-size: var(--text-code);
+	background: var(--surface-sunken);
+	border: var(--stroke) solid var(--line);
+	border-radius: var(--radius-control);
+}
+
+.segmented {
+	display: inline-flex;
+	padding: var(--space-half);
+	border-radius: var(--radius-control);
+	background: var(--fill);
+}
+
+.segmented button {
+	min-height: var(--control-segment);
+	padding: 0 var(--space-3);
+	font: inherit;
+	color: var(--text-muted);
+	background: transparent;
+	border: 0;
+	border-radius: calc(var(--radius-control) - var(--space-half));
+	cursor: pointer;
+}
+
+.segmented button[aria-pressed="true"] {
+	color: var(--text);
+	background: var(--surface);
+	box-shadow: inset 0 0 0 var(--stroke) var(--line);
+}
+
+/* File contents with line numbers. Numbers come from a CSS counter so copying the code copies only the code. */
+
+.code-view {
+	margin: 0;
+	padding: var(--space-3) 0;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	font-size: var(--text-code);
+	line-height: var(--leading-code);
+	tab-size: 4;
+	counter-reset: line;
+}
+
+.code-line {
+	display: block;
+	padding-right: var(--space-4);
+	counter-increment: line;
+}
+
+.code-line::before {
+	content: counter(line);
+	display: inline-block;
+	width: var(--line-number);
+	margin-right: var(--space-4);
+	padding-right: var(--space-2);
+	text-align: right;
+	color: var(--text-faint);
+	user-select: none;
+}
+
+.image-view {
+	display: grid;
+	place-items: center;
+	padding: var(--space-8);
+	background: var(--surface-sunken);
+}
+
+.image-view img {
+	max-height: var(--height-image);
+	box-shadow: 0 0 0 var(--stroke) var(--line);
+}
+
+/* Editor */
+
+.editor {
+	max-width: var(--width-editor);
+}
+
+.editor-text {
+	min-height: var(--height-editor);
+	padding: var(--space-3) var(--space-4);
+	font-family: var(--font-mono);
+	font-size: max(var(--text-input-min), var(--text-code));
+	line-height: var(--leading-code);
+	tab-size: 4;
+	resize: vertical;
+}
+
+/* One commit */
+
+.commit-head {
+	display: grid;
+	gap: var(--space-3);
+	margin-bottom: var(--space-6);
+}
+
+.commit-head h2 {
+	font-size: var(--text-h3);
+	overflow-wrap: anywhere;
+}
+
+.commit-body {
+	white-space: pre-wrap;
+	font-family: var(--font-text);
+	color: var(--text-muted);
+	max-width: var(--measure-wide);
+}
+
+.commit-ids,
+.facts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3) var(--space-8);
+	margin: 0;
+}
+
+.commit-ids dd,
+.facts dd {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2);
+	margin: var(--space-1) 0 0;
+	overflow-wrap: anywhere;
+}
+
+.commit-ids code {
+	font-size: var(--text-caption);
+}
+
+.facts {
+	display: grid;
+	gap: var(--space-3);
+}
+
+.diff-summary {
+	margin-bottom: var(--space-4);
+	color: var(--text-muted);
+}
+
+.diff-path {
+	min-width: 0;
+	font-size: var(--text-caption);
+	overflow-wrap: anywhere;
+}
+
+.change {
+	font-family: var(--font-mono);
+	font-size: var(--text-label);
+	font-weight: 600;
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.change-added {
+	color: var(--diff-add);
+}
+
+.change-deleted {
+	color: var(--diff-del);
+}
+
+.diff-lines {
+	display: block;
+	width: 100%;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	border-collapse: collapse;
+	font-family: var(--font-mono);
+	font-size: var(--text-code);
+	line-height: var(--leading-code);
+}
+
+.diff-lines tbody {
+	display: table;
+	min-width: 100%;
+}
+
+.diff-lines td {
+	padding: 0;
+	vertical-align: top;
+}
+
+.diff-lines .ln {
+	width: 1%;
+	min-width: var(--line-number);
+	padding-inline: var(--space-2);
+	text-align: right;
+	color: var(--text-faint);
+	user-select: none;
+}
+
+.diff-lines .text {
+	padding-inline: var(--space-2) var(--space-4);
+	white-space: pre;
+}
+
+.line-hunk td {
+	padding-block: var(--space-1);
+	background: var(--surface-sunken);
+	color: var(--text-muted);
+}
+
+.line-add {
+	background: color-mix(in oklch, var(--diff-add) 12%, transparent);
+}
+
+.line-del {
+	background: color-mix(in oklch, var(--diff-del) 12%, transparent);
+}
+
+.line-add .text {
+	color: var(--text);
+}
+
+.line-note td {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.settings {
+	max-width: var(--width-prose);
+}
+
+/* Phones: every target at least --target tall. Row links grow their hit area without moving the text. CSS can't
+   read a custom property in a media query, so the breakpoints stay numbers. */
+@media (width <= 640px) {
+	.button-small,
+	.ref-picker select,
+	.app-main .button {
+		min-height: var(--target);
+	}
+
+	.tabs a {
+		min-width: var(--target);
+		justify-content: center;
+	}
+
+	a.row-title,
+	.breadcrumb a,
+	.latest-message {
+		display: inline-block;
+		padding-block: calc((var(--target) - 1lh) / 2);
+		margin-block: calc((1lh - var(--target)) / 2);
+	}
+
+	/* Or iOS zooms the page when the picker opens. */
+	.ref-picker select {
+		font-size: var(--text-input-min);
+	}
+
+	a.sha-chip {
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--target);
+		min-width: var(--target);
+		justify-content: center;
+		/* The chip keeps its row's height: the extra hit area hangs over the rows around it. */
+		margin-block: calc((1lh - var(--target)) / 2);
+	}
+
+	.file-row {
+		min-height: var(--target);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.button-small {
+		transition: none;
+	}
+}

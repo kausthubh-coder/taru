@@ -676,7 +676,7 @@ async function mcp() {
 	check(init.status === 200 && init.body.result?.serverInfo?.name === "taru", "initialize");
 	const list = await raw(2, "tools/list", {});
 	t.step("POST /mcp tools/list", list.body.result?.tools?.map((tool) => tool.name));
-	check(list.body.result?.tools?.length === 5, "tools/list");
+	check(JSON.stringify(list.body.result?.tools?.map((tool) => tool.name)) === JSON.stringify(["list_repos", "read_tree", "read_file", "read_log", "read_commit", "commit_changes", "merge_branches"]), "tools/list");
 
 	// Then the official client over its Streamable HTTP transport.
 	const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");

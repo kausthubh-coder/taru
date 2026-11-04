@@ -1,0 +1,109 @@
+/* Prose: Markdown rendered by shared/markdown.ts, in the docs pages and in README previews in the app. Headings
+   tight, code in panes, tables that scroll sideways. The h1 + p rule makes a docs page's first paragraph its lede. */
+
+.prose > * + * {
+	margin-top: var(--space-4);
+}
+
+/* Text at the reading measure; code, tables and images may use the full column. */
+.prose p,
+.prose li,
+.prose blockquote {
+	max-width: var(--measure);
+}
+
+.prose h1 {
+	font-size: var(--text-h2);
+	line-height: var(--leading-heading);
+	letter-spacing: var(--tracking-heading);
+}
+
+.prose h1 + p {
+	margin-top: var(--space-4);
+	font-size: var(--text-lead);
+	line-height: var(--leading-lead);
+	color: var(--text-muted);
+}
+
+.prose h2 {
+	margin-top: var(--space-12);
+	font-size: var(--text-h3);
+	line-height: var(--leading-heading);
+	letter-spacing: var(--tracking-heading);
+}
+
+.prose h3 {
+	margin-top: var(--space-8);
+	font-family: var(--font-mono);
+	font-size: var(--text-small);
+	font-weight: 600;
+}
+
+.prose h2 + *,
+.prose h3 + * {
+	margin-top: var(--space-3);
+}
+
+.prose ul,
+.prose ol {
+	padding-left: var(--indent-list);
+}
+
+.prose li + li {
+	margin-top: var(--space-2);
+}
+
+.prose pre {
+	padding: var(--space-4);
+	background: var(--surface-sunken);
+	border: var(--stroke) solid var(--line);
+	border-radius: var(--radius-control);
+	font-size: var(--text-code);
+	line-height: var(--leading-pre);
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	tab-size: 2;
+}
+
+/* Long inline code (an endpoint, a JSON shape) may wrap inside prose; short commands still stay whole. */
+.prose :not(pre) > code {
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.prose table {
+	display: block;
+	width: 100%;
+	overflow-x: auto;
+	border-collapse: collapse;
+	font-size: var(--text-small);
+}
+
+.prose th,
+.prose td {
+	padding: var(--space-2) var(--space-4) var(--space-2) 0;
+	border-bottom: var(--stroke) solid var(--line);
+	text-align: left;
+	vertical-align: top;
+}
+
+.prose th {
+	font-weight: 600;
+}
+
+/* Digits line up in tables: sizes, limits, status codes. A Markdown column marked --: is end-aligned. */
+.prose table {
+	font-variant-numeric: tabular-nums;
+}
+
+.prose [align="right"] {
+	text-align: right;
+}
+
+/* Inline, as in Markdown: badge rows stay in a row, and a README's align="center" can center its logo. */
+.prose img {
+	display: inline;
+	max-width: 100%;
+	height: auto;
+	vertical-align: middle;
+}

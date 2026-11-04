@@ -58,7 +58,7 @@ describe("MCP over Streamable HTTP", () => {
 		expect((await rpc("ping")).body.result).toEqual({});
 		const list = await rpc("tools/list");
 		const tools = list.body.result?.tools as { name: string; inputSchema: { required?: string[] } }[];
-		expect(tools.map((t) => t.name)).toEqual(["list_repos", "read_tree", "read_file", "commit_changes", "merge_branches"]);
+		expect(tools.map((t) => t.name)).toEqual(["list_repos", "read_tree", "read_file", "read_log", "read_commit", "commit_changes", "merge_branches"]);
 		expect(tools.find((t) => t.name === "commit_changes")?.inputSchema.required).toEqual(["repo", "branch", "expected_head", "message", "changes"]);
 		expect(TOOLS.filter((t) => t.write).map((t) => t.name)).toEqual(["commit_changes", "merge_branches"]);
 	});
@@ -138,5 +138,12 @@ describe("MCP over Streamable HTTP", () => {
 		expect(conflict.isError).toBe(true);
 		expect(conflict.structuredContent).toMatchObject({ error: "merge_conflict", conflicts: [{ path: "README.md", kind: "content" }] });
 		expect((await env.REPO.getByName("mcp/demo").listRefs()).get("refs/heads/main")).toBe(ours.structuredContent.commit);
+
+		const log = await tool("read_log", { repo: "mcp/demo", limit: 2 });
+		expect(log.isError).toBe(false);
+		expect(log.structuredContent).toMatchObject({ more: true, commits: [{ commit: ours.structuredContent.commit, message: "ours\n" }, { commit: branch.structuredContent.commit }] });
+		const shown = await tool("read_commit", { repo: "mcp/demo", rev: ours.structuredContent.commit as string });
+		expect(shown.structuredContent).toMatchObject({ files: [{ path: "README.md", status: "modified", patch: "@@ -1 +1 @@\n-# MCP\n+# MCP ours\n" }] });
+		expect((await tool("read_log", { repo: "mcp/demo", limit: 500 })).structuredContent).toMatchObject({ error: "invalid_request" });
 	});
 });

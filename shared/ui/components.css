@@ -42,8 +42,10 @@
 .nav a {
 	color: var(--text-muted);
 	text-decoration: none;
-	/* A 44px tall target without changing the row's look. */
+	/* A 44px target without changing the row's look: tall from padding, wide enough for a short word like App. */
 	padding-block: var(--space-3);
+	min-width: var(--target);
+	text-align: center;
 }
 
 .nav a[aria-current="page"] {

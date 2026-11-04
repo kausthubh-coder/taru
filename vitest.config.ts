@@ -18,9 +18,9 @@ export default defineConfig(async () => {
 						include: ["features/**/*.test.ts", "shared/**/*.test.ts", "scripts/**/*.test.ts"],
 						exclude: ["**/*.worker.test.ts", "**/node_modules/**"],
 						testTimeout: 30_000,
-						// The brand kit's tests read theme.css as text (?raw). Vitest turns any CSS it isn't told to
-						// process into an empty string.
-						css: { include: [/shared\/ui\/theme\.css/] },
+						// The brand kit's tests read theme.css and the app, docs and prose styles as text (?raw). Vitest
+						// turns any CSS it isn't told to process into an empty string.
+						css: { include: [/shared\/ui\/(theme|prose)\.css/, /features\/(app|docs)\/ui\/(app|docs)\.css/] },
 					},
 				},
 				{

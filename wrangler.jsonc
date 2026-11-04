@@ -8,9 +8,12 @@
 	"compatibility_date": "2026-10-19",
 	"compatibility_flags": ["nodejs_compat"],
 	"assets": {
+		// The Worker reads two HTML shells through this binding: the web app's (for every /app path) and the docs'.
+		"binding": "ASSETS",
 		"not_found_handling": "single-page-application",
-		// Git clients, the JSON API and MCP must reach the Worker, never the SPA fallback.
-		"run_worker_first": ["/api/*", "/mcp", "/*/*.git", "/*/*.git/*"]
+		// Git clients, the JSON API and MCP must reach the Worker, never the SPA fallback. So must the docs, which
+		// the Worker renders, and the app's deep links, which all get the app shell.
+		"run_worker_first": ["/api/*", "/mcp", "/*/*.git", "/*/*.git/*", "/docs", "/docs/*", "/docs.md", "/llms.txt", "/llms-full.txt", "/skills/*", "/app", "/app/*"]
 	},
 	"observability": {
 		"enabled": true,

@@ -23,15 +23,20 @@ React with Vite, Vitest. Open source under AGPL-3.0.
 | Where | What lives there |
 |---|---|
 | `worker/index.ts` | Worker entry: routing only |
-| `features/git-core/` | The Git engine: objects, packs, smart HTTP protocol. No Cloudflare imports; storage through `repo.ts` |
-| `features/repo-store/server/` | `RepoObject` (SQLite + R2 storage implementing `Repo`) and `/api/repos` |
+| `features/git-core/` | The Git engine: objects, packs, smart HTTP protocol, agent operations, history and diffs (`history.ts`). No Cloudflare imports; storage through `repo.ts` |
+| `features/repo-store/server/` | `RepoObject` (SQLite + R2 storage implementing `Repo`), `/api/repos`, and `/api/session` (is this the admin token?) |
+| `features/agent-api/server/` | The agent REST routes (tree, file, commits, commits/<rev>, merges) and the MCP server at `/mcp` |
 | `features/git-http/server/` | `/<owner>/<repo>.git/...` endpoints, forwarded to the RepoObject |
 | `features/waitlist/server/` | `/api/waitlist`, stored in D1 |
 | `features/landing/ui/` | The landing page at `/` (its HTML is `index.html`) |
+| `features/app/ui/` | The web app at `/app` (shell `app/index.html`, entry `main.tsx`): browse, edit, history, diffs, the GitHub copy. The Worker serves the shell for every `/app` path |
+| `features/docs/` | `content/*.md` is the docs. `server/docs.ts` renders them at `/docs` (into `ui/shell/index.html`), as `.md`, and as `/llms.txt` and `/llms-full.txt` |
+| `skills/taru/SKILL.md` | The agent skill for Taru users (`npx skills add kausthubh-coder/taru`, also served at `/skills/taru/SKILL.md`). Not a skill for working on this repo |
 | `features/brand/ui/` | The brand kit at `/brand/` (its HTML is `brand/index.html`), and `theme.logic.ts`, which reads colors and sizes out of the theme |
-| `shared/ui/` | `theme.css` (fonts and every design token) and `components.css` (header, buttons, inputs, panes, footer), imported by both pages |
+| `shared/ui/` | `theme.css` (fonts and every design token), `components.css` (header, buttons, inputs, panes, footer) and `prose.css` (rendered Markdown), imported by every page |
+| `shared/markdown.ts` | The one Markdown renderer, safe for untrusted READMEs: docs pages and the app both use it |
 | `public/brand/` | Logo and icon SVGs. `scripts/brand-assets.mjs` rebuilds the PNG icons, `favicon.ico` and `og.png` from them |
-| `src/` | React entry, thin: renders features |
+| `src/` | The landing page's script (the waitlist form) |
 | `migrations/` | D1 migrations |
 | `scripts/` | `setup.mjs`, `doctor.mjs`, `remove-worktree.mjs`, `cloud.mjs`, `fake-github.mjs` (real `git http-backend` standing in for GitHub), `demo.mjs` (the 60-second demo, with checks), `brand-assets.mjs` |
 | `wrangler.jsonc` | Bindings: `REPO`, `BLOBS`, `DB`. Run `bun run cf-typegen` after changing it |
@@ -105,6 +110,7 @@ Tests: `*.test.ts` run in Node (pure logic, and git-core end-to-end tests that d
 | git-core has no Cloudflare imports | `features/git-core` is typechecked without DOM; review (nothing automatic yet) |
 | Text and outlines stay readable in light and dark (4.5:1 and 3:1) | `features/brand/ui/theme.logic.test.ts` checks the text and outline pairs in `theme.css` |
 | `/brand/` names only tokens that exist | `features/brand/ui/theme.logic.test.ts` reads `brand/index.html` and checks every role and size it names |
+| The app, docs and prose styles use only theme tokens (no raw sizes or colors outside media queries) | `features/brand/ui/theme.logic.test.ts` scans `app.css`, `docs.css` and `prose.css` |
 | No import cycles | oxlint `import/no-cycle` |
 | Lint warnings fail | `oxlint --deny-warnings` |
 | LF line endings | `.gitattributes` |

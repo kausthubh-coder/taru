@@ -27,3 +27,5 @@ The maintained source for verifying Taru's user-facing behavior. Read this, then
 | GitHub copy (mirror) | `github-mirror.md` | `PUT /api/repos/:owner/:name/mirror`, status on `GET /api/repos/:owner/:name` |
 | Agent API | `agent-api.md` | `GET .../tree`, `GET .../file`, `POST .../commits`, `POST .../merges` under `/api/repos/:owner/:name` |
 | MCP server | `mcp.md` | `POST /mcp` (Streamable HTTP), any MCP client |
+| Web app | `web-app.md` | Browser `/app` and every path under it, `GET /api/session` |
+| Docs, llms.txt, skill | `docs.md` | Browser `/docs`, `/docs/<page>.md`, `/llms.txt`, `/llms-full.txt`, `/skills/taru/SKILL.md` |
