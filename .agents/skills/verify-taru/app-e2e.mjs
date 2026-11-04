@@ -2,7 +2,8 @@
 //   node .agents/skills/verify-taru/app-e2e.mjs
 // A README full of XSS payloads renders safely and its relative image loads; a wrong admin token is refused and
 // the right one turns on writing; an edit and a new file become real commits that `git clone` sees; a branch that
-// moves under the editor writes nothing; the commit view shows the diff. Screenshots go to the run's evidence.
+// moves under the editor writes nothing; the commit view shows the diff; a tag that shares a branch's name opens
+// the tag, read-only; a rewrite too big to diff says so in REST, MCP and the app. Screenshots go to the run's evidence.
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -153,6 +154,39 @@ await page.getByRole("link", { name: "Fix total() in the browser" }).click();
 await page.locator(".diff-lines").first().waitFor();
 check("commit view shows the diff", (await page.locator(".line-add .text").first().textContent()).includes("items.reduce"));
 await page.screenshot({ path: `${out}/e2e-commit.png` });
+
+// A tag and a branch with the same name: picking the tag shows the tag's files, read-only.
+const pushUrl = `${base.replace("://", `://x:${encodeURIComponent(token)}@`)}/e2e/${name}.git`;
+execFileSync("git", ["-C", clone, "push", "-q", pushUrl, "HEAD~1:refs/tags/release", "HEAD:refs/heads/release"]);
+await page.goto(`${base}/app/e2e/${name}/blob/src/app.ts?ref=release`, { waitUntil: "networkidle" });
+await page.getByText("items.reduce").waitFor();
+check("same-name branch: branch content, editable", (await page.getByRole("link", { name: "Edit" }).count()) === 1);
+await page.locator(".ref-picker select").selectOption("refs/tags/release");
+await page.waitForURL(/ref=refs%2Ftags%2Frelease/);
+await page.getByText("() => 0").waitFor();
+const picked = await page.locator(".ref-picker select").evaluate((select) => ({ value: select.value, group: select.selectedOptions[0].parentElement.label }));
+check("same-name tag: tag content, picker on the tag, no Edit", picked.value === "refs/tags/release" && picked.group === "Tags" && (await page.getByRole("link", { name: "Edit" }).count()) === 0, JSON.stringify(picked));
+await page.screenshot({ path: `${out}/e2e-tag.png` });
+
+// A rewrite too big to diff: REST, MCP and the app all say so instead of failing.
+const lines = (word) => Array.from({ length: 3000 }, (_, i) => `${word} line ${i}\n`).join("");
+let tip = (await json(`${api}/tree`)).body.commit;
+tip = (await json(`${api}/commits`, { method: "POST", headers: auth, body: JSON.stringify({ branch: "main", expected_head: tip, message: "Big file", changes: [{ path: "big.txt", content: lines("old") }] }) })).body.commit;
+const rewrite = await json(`${api}/commits`, { method: "POST", headers: auth, body: JSON.stringify({ branch: "main", expected_head: tip, message: "Rewrite big file", changes: [{ path: "big.txt", content: lines("new") }] }) });
+const shown = await json(`${api}/commits/${rewrite.body.commit}`);
+const bigFile = shown.body.files?.find((f) => f.path === "big.txt");
+check("REST: rewrite comes back too_large", shown.status === 200 && bigFile?.too_large === true && bigFile.patch === null, JSON.stringify({ status: shown.status, too_large: bigFile?.too_large }));
+const mcp = await json(`${base}/mcp`, {
+	method: "POST",
+	headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+	body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "read_commit", arguments: { repo: `e2e/${name}`, rev: rewrite.body.commit } } }),
+});
+const mcpFile = mcp.body.result?.structuredContent?.files?.find((f) => f.path === "big.txt");
+check("MCP read_commit: rewrite comes back too_large", mcpFile?.too_large === true && mcpFile.patch === null, JSON.stringify(mcpFile ?? mcp.body));
+await page.goto(`${base}/app/e2e/${name}/commit/${rewrite.body.commit}`, { waitUntil: "networkidle" });
+await page.getByText("This diff is too large to show here").waitFor();
+check("app: rewrite says the diff is too large", (await page.locator("section[aria-label='big.txt']").textContent()).includes("too large to diff"));
+await page.screenshot({ path: `${out}/e2e-too-large.png` });
 
 check("no page errors", errors.length === 0, errors.join(" | "));
 await browser.close();

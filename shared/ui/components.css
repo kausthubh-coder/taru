@@ -44,7 +44,7 @@
 	text-decoration: none;
 	/* A 44px target without changing the row's look: tall from padding, wide enough for a short word like App. */
 	padding-block: var(--space-3);
-	min-width: 44px;
+	min-width: var(--target);
 	text-align: center;
 }
 

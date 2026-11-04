@@ -141,7 +141,7 @@ function FileDiff({ file }: { file: ChangedFile }) {
 				<span className={`change change-${file.status}`}>{STATUS_LABEL[file.status]}</span>
 				<code className="diff-path">{file.path}</code>
 				<span className="toolbar-end muted">
-					{file.binary ? "binary" : (
+					{file.binary ? "binary" : file.too_large && file.additions + file.deletions === 0 ? "too large to diff" : (
 						<>
 							<span className="diff-add">+{file.additions}</span> <span className="diff-del">−{file.deletions}</span>
 						</>
@@ -168,10 +168,10 @@ function FileDiff({ file }: { file: ChangedFile }) {
 				</table>
 			) : file.binary ? (
 				<p className="state-line">Binary file. Its contents aren't shown.</p>
-			) : file.patch === "" ? (
-				<p className="state-line">{file.status === "modified" ? "Only the file mode changed." : "Empty file."}</p>
+			) : file.too_large ? (
+				<p className="state-line">This diff is too large to show here. Use git to see it.</p>
 			) : (
-				<p className="state-line">This diff is too big to show here. Use git to see it.</p>
+				<p className="state-line">{file.status === "modified" ? "Only the file mode changed." : "Empty file."}</p>
 			)}
 		</section>
 	);

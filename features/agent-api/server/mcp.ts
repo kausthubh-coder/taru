@@ -72,7 +72,7 @@ export const TOOLS: Tool[] = [
 	},
 	{
 		name: "read_commit",
-		description: "One commit and what it changed against its first parent, like git show: for each file its path, status (added, deleted, modified), old and new blob ids and modes, line counts, and a unified diff (patch) for text files. Use it to review work before merging.",
+		description: "One commit and what it changed against its first parent, like git show: for each file its path, status (added, deleted, modified), old and new blob ids and modes, line counts, and a unified diff (patch) for text files. too_large: true means the diff was too large to compute or send (a file over 1 MiB, more than 2,000 changed lines, or past 2 MiB of patches in one commit): patch is null, so read the file or use git. Use it to review work before merging.",
 		inputSchema: { type: "object", properties: { repo: REPO, rev: { type: "string", description: "Commit id, branch, tag or full ref." } }, required: ["repo", "rev"], additionalProperties: false },
 		write: false,
 	},

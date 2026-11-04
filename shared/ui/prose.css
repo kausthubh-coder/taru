@@ -21,7 +21,7 @@
 .prose h1 + p {
 	margin-top: var(--space-4);
 	font-size: var(--text-lead);
-	line-height: 1.5;
+	line-height: var(--leading-lead);
 	color: var(--text-muted);
 }
 
@@ -46,7 +46,7 @@
 
 .prose ul,
 .prose ol {
-	padding-left: 1.25em;
+	padding-left: var(--indent-list);
 }
 
 .prose li + li {
@@ -56,10 +56,10 @@
 .prose pre {
 	padding: var(--space-4);
 	background: var(--surface-sunken);
-	border: 1px solid var(--line);
+	border: var(--stroke) solid var(--line);
 	border-radius: var(--radius-control);
 	font-size: var(--text-code);
-	line-height: 1.7;
+	line-height: var(--leading-pre);
 	overflow-x: auto;
 	overscroll-behavior-x: contain;
 	tab-size: 2;
@@ -82,7 +82,7 @@
 .prose th,
 .prose td {
 	padding: var(--space-2) var(--space-4) var(--space-2) 0;
-	border-bottom: 1px solid var(--line);
+	border-bottom: var(--stroke) solid var(--line);
 	text-align: left;
 	vertical-align: top;
 }

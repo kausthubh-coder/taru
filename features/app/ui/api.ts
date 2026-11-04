@@ -84,6 +84,8 @@ export interface ChangedFile {
 	additions: number;
 	deletions: number;
 	patch: string | null;
+	/** The server didn't diff it: too big, or too many changed lines. */
+	too_large: boolean;
 }
 
 export interface CommitDetail extends CommitSummary {

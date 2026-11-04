@@ -3,7 +3,7 @@ import { unifiedDiff } from "../../git-core/history.ts";
 import { firstLine, formatBytes, imageType, messageBody, parsePatch, sortEntries } from "./format.logic.ts";
 
 test("parsePatch numbers each line from the hunk headers", () => {
-	const { patch } = unifiedDiff("a\nb\nc\nd\n", "a\nB\nc\nd\ne");
+	const { patch } = unifiedDiff("a\nb\nc\nd\n", "a\nB\nc\nd\ne")!;
 	expect(parsePatch(patch).map((l) => [l.kind, l.old, l.new, l.text])).toEqual([
 		["hunk", null, null, "@@ -1,4 +1,5 @@"],
 		["context", 1, 1, "a"],
@@ -17,7 +17,7 @@ test("parsePatch numbers each line from the hunk headers", () => {
 });
 
 test("parsePatch on an added file starts the new side at 1", () => {
-	expect(parsePatch(unifiedDiff("", "x\n").patch).map((l) => [l.kind, l.old, l.new])).toEqual([
+	expect(parsePatch(unifiedDiff("", "x\n")!.patch).map((l) => [l.kind, l.old, l.new])).toEqual([
 		["hunk", null, null],
 		["add", null, 1],
 	]);

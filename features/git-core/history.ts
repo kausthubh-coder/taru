@@ -58,8 +58,14 @@ export interface ChangedFile {
 	binary: boolean;
 	additions: number;
 	deletions: number;
-	/** Unified diff hunks ("@@ -1,3 +1,4 @@" onward), or null for binary files and files over the size caps. */
+	/** Unified diff hunks ("@@ -1,3 +1,4 @@" onward), or null for binary files and when too_large. */
 	patch: string | null;
+	/**
+	 * True when the diff is too large to show: a side over MAX_DIFF_FILE_BYTES, more than MAX_EDITS changed lines,
+	 * or the commit's patches already past MAX_PATCH_BYTES. patch is null; additions and deletions are 0 unless
+	 * only the patch budget ran out.
+	 */
+	too_large: boolean;
 }
 
 export interface ReadCommitOk extends CommitSummary {
@@ -218,19 +224,23 @@ async function describeChange(repo: Repo, change: Change, withPatch: boolean): P
 		new_mode: change.new?.mode ?? null,
 	};
 	const [before, after] = await Promise.all([blobBytes(repo, change.old), blobBytes(repo, change.new)]);
-	if (isBinary(before) || isBinary(after)) return { ...base, binary: true, additions: 0, deletions: 0, patch: null };
-	if (before.length > MAX_DIFF_FILE_BYTES || after.length > MAX_DIFF_FILE_BYTES) {
-		return { ...base, binary: false, additions: 0, deletions: 0, patch: null };
-	}
+	if (isBinary(before) || isBinary(after)) return { ...base, binary: true, additions: 0, deletions: 0, patch: null, too_large: false };
+	const tooLarge = { ...base, binary: false, additions: 0, deletions: 0, patch: null, too_large: true };
+	if (before.length > MAX_DIFF_FILE_BYTES || after.length > MAX_DIFF_FILE_BYTES) return tooLarge;
 	const diff = unifiedDiff(decodeText(before), decodeText(after));
-	return { ...base, binary: false, additions: diff.additions, deletions: diff.deletions, patch: withPatch ? diff.patch : null };
+	if (!diff) return tooLarge;
+	return { ...base, binary: false, additions: diff.additions, deletions: diff.deletions, patch: withPatch ? diff.patch : null, too_large: !withPatch };
 }
 
-/** A unified diff with three lines of context, as `git diff` prints it after the "+++" line. */
-export function unifiedDiff(before: string, after: string): { patch: string; additions: number; deletions: number } {
+/**
+ * A unified diff with three lines of context, as `git diff` prints it after the "+++" line. Null when it needs
+ * more than MAX_EDITS (diff3.ts) changed lines.
+ */
+export function unifiedDiff(before: string, after: string): { patch: string; additions: number; deletions: number } | null {
 	const a = splitLines(before);
 	const b = splitLines(after);
-	const match = matchLines(a, b);
+	const { match, complete } = matchLines(a, b);
+	if (!complete) return null;
 
 	// The edit script: " " keeps a line, "-" drops one from a, "+" adds one from b.
 	const ops: { op: " " | "-" | "+"; line: string }[] = [];

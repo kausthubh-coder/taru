@@ -23,8 +23,9 @@ export function diff3(base: string, ours: string, theirs: string, labels = { our
 	const o = splitLines(base);
 	const a = splitLines(ours);
 	const b = splitLines(theirs);
-	const matchA = matchLines(o, a);
-	const matchB = matchLines(o, b);
+	// Past the edit budget a side's middle stays unmatched: it counts as rewritten, which can only add conflicts.
+	const matchA = matchLines(o, a).match;
+	const matchB = matchLines(o, b).match;
 
 	const out: string[] = [];
 	let conflicts = 0;
@@ -74,8 +75,12 @@ function terminated(lines: string[]): string[] {
 	return [...lines.slice(0, -1), `${lines[lines.length - 1]}\n`];
 }
 
-/** For each line of `from`, the index of its matched line in `to`, or -1. Matches are strictly increasing. */
-export function matchLines(from: string[], to: string[]): Int32Array {
+/**
+ * For each line of `from`, the index of its matched line in `to`, or -1. Matches are strictly increasing.
+ * `complete` is false when the middle needed more than MAX_EDITS edits: then only the common prefix and suffix
+ * are matched.
+ */
+export function matchLines(from: string[], to: string[]): { match: Int32Array; complete: boolean } {
 	const match = new Int32Array(from.length).fill(-1);
 	// Common prefix and suffix are matched outright; the edit script is only computed for the middle.
 	let prefix = 0;
@@ -88,28 +93,32 @@ export function matchLines(from: string[], to: string[]): Int32Array {
 		match[from.length - 1 - suffix] = to.length - 1 - suffix;
 		suffix++;
 	}
-	for (const [i, j] of myersMatches(from.slice(prefix, from.length - suffix), to.slice(prefix, to.length - suffix))) {
-		match[prefix + i] = prefix + j;
-	}
-	return match;
+	const matches = myersMatches(from.slice(prefix, from.length - suffix), to.slice(prefix, to.length - suffix));
+	for (const [i, j] of matches ?? []) match[prefix + i] = prefix + j;
+	return { match, complete: matches !== null };
 }
 
-/** Past this many edits the middle is treated as fully rewritten; the trace would otherwise cost O(D^2) memory. */
-const MAX_EDITS = 10_000;
+/**
+ * The most edits (lines added plus lines removed, after the common prefix and suffix) Myers will search.
+ * The trace keeps 2d + 3 numbers for each step d, so its memory is about 4 * MAX_EDITS^2 bytes: 16 MB here,
+ * well inside a Durable Object's 128 MB.
+ */
+export const MAX_EDITS = 2_000;
 
-/** Myers' O(ND) diff, returning the (i, j) pairs of equal lines on the shortest edit path. */
-function myersMatches(a: string[], b: string[]): [number, number][] {
+/** Myers' O(ND) diff: the (i, j) pairs of equal lines on the shortest edit path, or null past MAX_EDITS. */
+function myersMatches(a: string[], b: string[]): [number, number][] | null {
 	const n = a.length;
 	const m = b.length;
 	if (n === 0 || m === 0) return [];
 	const max = Math.min(n + m, MAX_EDITS);
-	const offset = max;
+	const offset = max + 1;
+	// trace[d] is v as step d found it, cut to diagonals -d-1..d+1: the only ones the walk back reads.
 	const trace: Int32Array[] = [];
-	let v = new Int32Array(2 * max + 2);
+	let v = new Int32Array(2 * max + 3);
 	v[offset + 1] = 0;
 	let found = -1;
 	for (let d = 0; d <= max && found < 0; d++) {
-		trace.push(v);
+		trace.push(v.slice(offset - d - 1, offset + d + 2));
 		const next = new Int32Array(v);
 		for (let k = -d; k <= d; k += 2) {
 			let x: number;
@@ -128,9 +137,10 @@ function myersMatches(a: string[], b: string[]): [number, number][] {
 		}
 		v = next;
 	}
-	if (found < 0) return [];
+	if (found < 0) return null;
 
-	// Walk the trace back from (n, m) to (0, 0); diagonal moves are the matches.
+	// Walk the trace back from (n, m) to (0, 0); diagonal moves are the matches. Diagonal k of trace[d] is at
+	// index k + d + 1.
 	const matches: [number, number][] = [];
 	let x = n;
 	let y = m;
@@ -138,9 +148,9 @@ function myersMatches(a: string[], b: string[]): [number, number][] {
 		const vd = trace[d];
 		const k = x - y;
 		let prevK: number;
-		if (k === -d || (k !== d && vd[offset + k - 1] < vd[offset + k + 1])) prevK = k + 1;
+		if (k === -d || (k !== d && vd[k - 1 + d + 1] < vd[k + 1 + d + 1])) prevK = k + 1;
 		else prevK = k - 1;
-		const prevX = d === 0 ? 0 : vd[offset + prevK];
+		const prevX = d === 0 ? 0 : vd[prevK + d + 1];
 		const prevY = prevX - prevK;
 		while (x > prevX && y > prevY) {
 			x--;

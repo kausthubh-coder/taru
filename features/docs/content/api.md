@@ -98,13 +98,13 @@ One commit (by id, branch or tag) and what it changed against its first parent, 
   "compared_to": "...", "truncated": false,
   "files": [{
     "path": "src/cart.ts", "status": "modified", "old_oid": "...", "new_oid": "...", "old_mode": "100644", "new_mode": "100644",
-    "binary": false, "additions": 1, "deletions": 1,
+    "binary": false, "too_large": false, "additions": 1, "deletions": 1,
     "patch": "@@ -3,7 +3,7 @@\n ...\n-  return 0\n+  return items.reduce(...)\n ..."
   }]
 }
 ```
 
-`status` is `added`, `deleted` or `modified`. `patch` is the unified diff from the first `@@` line, or `null` for binary files and files over 1 MiB. The list stops at 300 files (`truncated: true`).
+`status` is `added`, `deleted` or `modified`. `patch` is the unified diff from the first `@@` line, or `null` for binary files and diffs too large to show. `too_large: true` means the diff wasn't shown: a file over 1 MiB, more than 2,000 changed lines, or past 2 MiB of patches in one commit. The first two come with counts of 0. The list stops at 300 files (`truncated: true`).
 
 ## Writing
 

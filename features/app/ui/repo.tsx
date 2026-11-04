@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { query, repoPath, type FileResult, type LogResult, type RepoDetail, type TreeResult } from "./api.ts";
 import { formatBytes, imageType, isMarkdown, sortEntries, firstLine } from "./format.logic.ts";
 import { navigate, useApi } from "./navigation.ts";
-import { branchesOf, currentRef, isBranch, RepoContext, tagsOf, useRepo } from "./repo-context.ts";
+import { currentRef, isBranch, refOptions, RepoContext, useRepo } from "./repo-context.ts";
 import { hrefFor, parentPath, type RepoRoute, type Route } from "./routes.logic.ts";
 import { useSession } from "./session.ts";
 import { CopyButton, FileIcon, FolderIcon, Link, Load, Markdown, Sha, When } from "./ui.tsx";
@@ -71,26 +71,24 @@ export function RepoLayout({ route, children }: { route: RepoRoute; children: Re
 /** Branch and tag picker: switching keeps the screen and the path. */
 export function RefPicker({ value, onPick }: { value: string; onPick: (ref: string) => void }) {
 	const { repo } = useRepo();
-	const branches = branchesOf(repo);
-	const tags = tagsOf(repo);
-	const known = branches.includes(value) || tags.includes(value);
+	const { selected, other, branches, tags } = refOptions(repo, value);
 	return (
 		<label className="ref-picker">
 			<span className="sr-only">Branch or tag</span>
-			<select value={value} onChange={(event) => onPick(event.target.value)}>
-				{known ? null : <option value={value}>{value.length === 40 ? value.slice(0, 7) : value}</option>}
+			<select value={selected} onChange={(event) => onPick(event.target.value)}>
+				{other ? <option value={other.value}>{other.label}</option> : null}
 				<optgroup label="Branches">
 					{branches.map((branch) => (
-						<option key={branch} value={branch}>
-							{branch}
+						<option key={branch.value} value={branch.value}>
+							{branch.label}
 						</option>
 					))}
 				</optgroup>
 				{tags.length ? (
 					<optgroup label="Tags">
 						{tags.map((tag) => (
-							<option key={tag} value={tag}>
-								{tag}
+							<option key={tag.value} value={tag.value}>
+								{tag.label}
 							</option>
 						))}
 					</optgroup>

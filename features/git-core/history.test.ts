@@ -7,6 +7,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { MAX_EDITS } from "./diff3.ts";
 import { readCommitChanges, readLog, unifiedDiff, type ChangedFile } from "./history.ts";
 import type { MemoryRepo } from "./memoryRepo.ts";
 import { git, loadGitRepo, ORACLE_ENV, writeFile } from "./oracle.test-helpers.ts";
@@ -151,6 +152,10 @@ describe("readCommitChanges", () => {
 	});
 });
 
+// 3,000 fully different lines a side is only about 26 KB a file, but Myers needs 6,000 edits for it, and its
+// trace used to peak near 300 MiB: more than a Durable Object's 128 MB.
+const rewrite = (word: string, count: number) => Array.from({ length: count }, (_, i) => `${word} line ${i}\n`).join("");
+
 describe("unifiedDiff", () => {
 	test("matches git's hunks for a small edit", () => {
 		const before = "a\nb\nc\nd\ne\nf\ng\nh\n";
@@ -163,6 +168,46 @@ describe("unifiedDiff", () => {
 	});
 
 	test("an added file starts at 0,0", () => {
-		expect(unifiedDiff("", "x\ny\n").patch).toBe("@@ -0,0 +1,2 @@\n+x\n+y\n");
+		expect(unifiedDiff("", "x\ny\n")?.patch).toBe("@@ -0,0 +1,2 @@\n+x\n+y\n");
+	});
+
+	test("a rewrite past MAX_EDITS comes back as too large, not a patch", () => {
+		expect(unifiedDiff(rewrite("old", 3000), rewrite("new", 3000))).toBeNull();
+		// Right at the budget it still diffs.
+		expect(unifiedDiff(rewrite("old", MAX_EDITS / 2), rewrite("new", MAX_EDITS / 2))).toMatchObject({ additions: MAX_EDITS / 2, deletions: MAX_EDITS / 2 });
+	});
+
+	test("diffing the 3,000-line rewrite stays far below 128 MB", () => {
+		// A fresh process, so its peak memory is this diff's alone. Bun reports maxRSS in KiB.
+		const history = join(import.meta.dirname, "history.ts");
+		const script = `
+			const { unifiedDiff } = await import(${JSON.stringify(history)});
+			const rewrite = ${rewrite.toString()};
+			const result = unifiedDiff(rewrite("old", 3000), rewrite("new", 3000));
+			console.log(JSON.stringify({ result, maxRSS: process.resourceUsage().maxRSS }));
+		`;
+		const { result, maxRSS } = JSON.parse(execFileSync("bun", ["-e", script], { encoding: "utf8" })) as { result: unknown; maxRSS: number };
+		expect(result).toBeNull();
+		expect(maxRSS / 1024).toBeLessThan(96);
+	});
+});
+
+describe("readCommitChanges on a huge rewrite", () => {
+	test("marks the file too_large with no patch", async () => {
+		const big = join(work, "big");
+		git(work, "init", "-q", big);
+		writeFile(big, "big.txt", rewrite("old", 3000));
+		git(big, "add", "-A");
+		git(big, "commit", "-qm", "big file");
+		writeFile(big, "big.txt", rewrite("new", 3000));
+		writeFile(big, "small.txt", "still diffed\n");
+		git(big, "add", "-A");
+		git(big, "commit", "-qm", "rewrite big file");
+		const result = await readCommitChanges(loadGitRepo(big), git(big, "rev-parse", "HEAD"));
+		if (!result.ok) throw new Error(result.message);
+		expect(result.files).toEqual([
+			expect.objectContaining({ path: "big.txt", binary: false, too_large: true, patch: null, additions: 0, deletions: 0 }),
+			expect.objectContaining({ path: "small.txt", too_large: false, patch: "@@ -0,0 +1 @@\n+still diffed\n", additions: 1 }),
+		]);
 	});
 });

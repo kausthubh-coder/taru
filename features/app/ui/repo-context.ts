@@ -38,6 +38,27 @@ export function currentRef(repo: RepoDetail, ref: string | null): string {
 	return ref ?? repo.head.replace(/^refs\/heads\//, "");
 }
 
+/** Only a short branch name is a branch here: the ref picker hands out tags as "refs/tags/<name>". */
 export function isBranch(repo: RepoDetail, ref: string): boolean {
+	if (ref.startsWith("refs/")) return false;
 	return `refs/heads/${ref}` in repo.refs || ref === repo.head.replace(/^refs\/heads\//, "");
+}
+
+export interface RefOption {
+	value: string;
+	label: string;
+}
+
+/**
+ * What the branch and tag picker lists, and which option shows `ref` (a screen's current ref). Branches are
+ * short names and tags are full "refs/tags/<name>", so a tag that shares a branch's name still picks the tag.
+ * A short name that is only a tag selects that tag, and anything else (a commit id) gets an option of its own.
+ */
+export function refOptions(repo: RepoDetail, ref: string): { selected: string; other: RefOption | null; branches: RefOption[]; tags: RefOption[] } {
+	const branches = branchesOf(repo).map((name) => ({ value: name, label: name }));
+	const tags = tagsOf(repo).map((name) => ({ value: `refs/tags/${name}`, label: name }));
+	const short = ref.startsWith("refs/heads/") ? ref.slice("refs/heads/".length) : ref;
+	const selected = branches.some((b) => b.value === short) ? short : tags.some((t) => t.value === `refs/tags/${ref}`) ? `refs/tags/${ref}` : ref;
+	const known = branches.some((b) => b.value === selected) || tags.some((t) => t.value === selected);
+	return { selected, other: known ? null : { value: ref, label: ref.length === 40 ? ref.slice(0, 7) : ref }, branches, tags };
 }

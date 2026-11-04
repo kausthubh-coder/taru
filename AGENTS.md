@@ -110,6 +110,7 @@ Tests: `*.test.ts` run in Node (pure logic, and git-core end-to-end tests that d
 | git-core has no Cloudflare imports | `features/git-core` is typechecked without DOM; review (nothing automatic yet) |
 | Text and outlines stay readable in light and dark (4.5:1 and 3:1) | `features/brand/ui/theme.logic.test.ts` checks the text and outline pairs in `theme.css` |
 | `/brand/` names only tokens that exist | `features/brand/ui/theme.logic.test.ts` reads `brand/index.html` and checks every role and size it names |
+| The app, docs and prose styles use only theme tokens (no raw sizes or colors outside media queries) | `features/brand/ui/theme.logic.test.ts` scans `app.css`, `docs.css` and `prose.css` |
 | No import cycles | oxlint `import/no-cycle` |
 | Lint warnings fail | `oxlint --deny-warnings` |
 | LF line endings | `.gitattributes` |

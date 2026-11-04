@@ -1,4 +1,7 @@
 import { describe, expect, test } from "vitest";
+import appCss from "../../app/ui/app.css?raw";
+import docsCss from "../../docs/ui/docs.css?raw";
+import proseCss from "../../../shared/ui/prose.css?raw";
 import page from "../../../brand/index.html?raw";
 import theme from "../../../shared/ui/theme.css?raw";
 import { contrast, oklchToRgb, parseColorRoles, sizeRangePx, toHex, type Scheme } from "./theme.logic.ts";
@@ -115,5 +118,29 @@ describe.each<Scheme>(["light", "dark"])("theme contrast, %s", (scheme) => {
 		["line-input", "surface", 3],
 	])("--%s on --%s is at least %s:1", (foreground, background, minimum) => {
 		expect(contrast(color(foreground, scheme), color(background, scheme))).toBeGreaterThanOrEqual(minimum);
+	});
+});
+
+// AGENTS.md: components use only the role tokens in theme.css, never raw colors or sizes. These style sheets
+// keep to it. Media queries are the exception: CSS can't read a custom property there.
+describe.each([
+	["app.css", appCss],
+	["docs.css", docsCss],
+	["prose.css", proseCss],
+])("%s", (_file, source) => {
+	const css = source.replace(/\/\*[\s\S]*?\*\//g, "");
+	const declarations = css.split("\n").filter((line) => !line.trimStart().startsWith("@media"));
+
+	test("has no raw sizes or colors", () => {
+		const raw = /(?<![\w-])\d*\.?\d+(px|rem|em|ch|vw|vh)\b|#[0-9a-f]{3,8}\b|\b(rgb|hsl|oklch|lab)a?\(/i;
+		expect(declarations.filter((line) => raw.test(line.replace(/color-mix\(in oklch/g, "")))).toEqual([]);
+	});
+
+	test("names only tokens theme.css defines", () => {
+		const defined = new Set([...theme.matchAll(/^\s*--([\w-]+):/gm)].map((match) => match[1]));
+		const used = [...css.matchAll(/var\(--([\w-]+)\)/g)].map((match) => match[1]);
+		// An empty string here would mean Vitest wasn't told to load this file (vitest.config.ts css.include).
+		expect(used.length).toBeGreaterThan(10);
+		expect(used.filter((name) => !defined.has(name))).toEqual([]);
 	});
 });

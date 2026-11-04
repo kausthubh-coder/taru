@@ -122,6 +122,41 @@
 	--gutter: clamp(20px, 4vw, 48px);
 	/* About 70 characters of body text. ch is the width of a zero, and Instrument Sans has wide digits. */
 	--measure: 48ch;
+	/* A commit message or other monospace-ish text that keeps its own line breaks. */
+	--measure-wide: 72ch;
+
+	/* Sizes with one job each, for the app and docs. Heights are minimums: text can make a control taller. */
+	--target: 44px; /* the smallest hit area anywhere, and every control's height on a phone */
+	--control: 48px; /* buttons and fields on the landing page; head rows of panes */
+	--control-compact: 40px; /* the app's buttons, fields and file rows */
+	--control-small: 36px; /* quiet buttons inside a screen, the branch picker */
+	--control-segment: 32px; /* one option of a segmented switch */
+	--row: 56px; /* list rows and the app's header */
+	--logo: 28px; /* the header logo's height */
+	--icon: 16px; /* file and folder icons */
+	--dot: 8px; /* status dots */
+	--text-input-min: 16px; /* smallest text in a field: below it, iOS zooms the page on focus */
+	--line-number: 5ch; /* the line number column of code and diffs */
+	--leading-code: 1.6;
+	--leading-lead: 1.5;
+	--leading-pre: 1.7;
+	--indent-list: 1.25em;
+	--pad-chip: 0.15em 0.45em; /* a commit id chip */
+	--space-half: 2px; /* the inset of a segmented switch */
+	--width-form: 36rem; /* forms and empty states */
+	--width-dialog: 30rem;
+	--width-picker: 16rem; /* longest branch name shown before it cuts off */
+	--width-prose: 46rem; /* a README, a docs page, settings */
+	--width-editor: 64rem;
+	--width-docs-nav: 200px;
+	--height-editor: 24rem;
+	--height-image: 70vh;
+
+	/* Strokes: a hairline for every edge, heavier only to mark state. */
+	--stroke: 1px;
+	--stroke-ring: 1.5px; /* an empty status dot */
+	--stroke-current: 2px; /* the underline of the current tab */
+	--stroke-alert: 3px; /* the edge of an error notice */
 }
 
 /* Base */
